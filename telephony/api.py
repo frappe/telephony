@@ -164,3 +164,18 @@ def parse_call_log(call):
 		}
 
 	return call
+
+
+@frappe.whitelist()
+def create_telephony_agent():
+	if not frappe.db.exists("TF Telephony Agent", {"user": frappe.session.user}):
+		agent = frappe.get_doc(
+			{
+				"doctype": "TF Telephony Agent",
+				"user": frappe.session.user,
+			}
+		).insert(ignore_permissions=True)
+	else:
+		agent = frappe.db.get_value("TF Telephony Agent", {"user": frappe.session.user})
+
+	return agent
