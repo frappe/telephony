@@ -20,14 +20,14 @@ class TFCallLog(Document):
 				"type": "Link",
 				"key": "caller",
 				"options": "User",
-				"width": "9rem",
+				"width": "12rem",
 			},
 			{
 				"label": "Receiver",
 				"type": "Link",
 				"key": "receiver",
 				"options": "User",
-				"width": "9rem",
+				"width": "12rem",
 			},
 			{
 				"label": "Type",

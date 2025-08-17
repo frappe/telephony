@@ -143,8 +143,8 @@ def parse_call_log(call):
 			"image": contact.get("image"),
 		}
 		call["_receiver"] = {
-			"label": receiver[0],
-			"image": receiver[1],
+			"label": receiver[0] or "Unknown",
+			"image": receiver[1] or "",
 		}
 	elif call.get("type") == "Outgoing":
 		call["activity_type"] = "outgoing_call"
@@ -155,8 +155,8 @@ def parse_call_log(call):
 			else [None, None]
 		)
 		call["_caller"] = {
-			"label": caller[0],
-			"image": caller[1],
+			"label": caller[0] or "Unknown",
+			"image": caller[1] or "",
 		}
 		call["_receiver"] = {
 			"label": contact.get("full_name", "Unknown"),
