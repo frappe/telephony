@@ -17,9 +17,7 @@
   "call_receiving_device",
   "column_break_zgsa",
   "exotel",
-  "exotel_number",
-  "section_break_etcb",
-  "phone_nos"
+  "exotel_number"
  ],
  "fields": [
   {
@@ -49,8 +47,7 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Mobile No.",
-   "read_only": 1
+   "label": "Mobile No."
   },
   {
    "fieldname": "default_medium",
@@ -97,22 +94,12 @@
    "fieldname": "exotel_number",
    "fieldtype": "Data",
    "label": "Exotel Number"
-  },
-  {
-   "fieldname": "section_break_etcb",
-   "fieldtype": "Section Break"
-  },
-  {
-   "fieldname": "phone_nos",
-   "fieldtype": "Table",
-   "label": "Phone numbers",
-   "options": "TF Telephony Phone"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-08-12 12:58:35.678558",
+ "modified": "2025-08-18 12:40:06.247707",
  "modified_by": "Administrator",
  "module": "FTelephony",
  "name": "TF Telephony Agent",
