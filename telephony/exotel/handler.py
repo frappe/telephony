@@ -199,7 +199,6 @@ def create_call_log(
 	else:
 		call_log.caller = agent
 
-	# link call log with lead/deal
 	contact_number = from_number if call_type == "Incoming" else to_number
 	link(contact_number, call_log)
 

@@ -84,6 +84,52 @@ def get_contact(phone_number):
 
 
 @frappe.whitelist()
+def create_call_log(
+	id,
+	telephony_medium,
+	from_number,
+	to_number,
+	duration,
+	status,
+	call_type,
+	caller,
+	receiver,
+):
+	call_log = frappe.get_doc(
+		{
+			"doctype": "TF Call Log",
+			"id": id,
+			"to": to_number,
+			"type": call_type,
+			"status": status,
+			"telephony_medium": telephony_medium,
+			"from": from_number,
+			"duration": duration,
+		}
+	).insert(ignore_permissions=True)
+
+	if call_type == "Incoming":
+		call_log.receiver = receiver
+	else:
+		call_log.caller = caller
+
+	contact_number = from_number if call_type == "Incoming" else to_number
+	link(contact_number, call_log)
+
+	call_log.save(ignore_permissions=True)
+
+	return call_log
+
+
+def link(contact_number, call_log):
+	contact = get_contact_by_phone_number(contact_number)
+	if contact.get("name"):
+		doctype = "Contact"
+		docname = contact.get("name")
+		call_log.link_with_reference_doc(doctype, docname)
+
+
+@frappe.whitelist()
 def get_call_log(name):
 	call = frappe.get_cached_doc(
 		"TF Call Log",

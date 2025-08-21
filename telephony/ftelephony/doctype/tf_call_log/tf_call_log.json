@@ -32,6 +32,7 @@
    "fieldname": "telephony_medium",
    "fieldtype": "Select",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Telephony Medium",
    "options": "\nManual\nTwilio\nExotel",
    "read_only": 1
@@ -86,6 +87,7 @@
    "fieldname": "to",
    "fieldtype": "Data",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "To",
    "reqd": 1
   },
@@ -134,7 +136,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-08-11 16:33:12.907926",
+ "modified": "2025-08-21 13:03:30.692064",
  "modified_by": "Administrator",
  "module": "FTelephony",
  "name": "TF Call Log",
