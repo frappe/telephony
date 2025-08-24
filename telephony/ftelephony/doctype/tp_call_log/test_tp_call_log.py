@@ -11,9 +11,9 @@ EXTRA_TEST_RECORD_DEPENDENCIES = []  # eg. ["User"]
 IGNORE_TEST_RECORD_DEPENDENCIES = []  # eg. ["User"]
 
 
-class IntegrationTestTFCallLog(IntegrationTestCase):
+class IntegrationTestTPCallLog(IntegrationTestCase):
 	"""
-	Integration tests for TFCallLog.
+	Integration tests for TPCallLog.
 	Use this class for testing interactions between multiple components.
 	"""
 

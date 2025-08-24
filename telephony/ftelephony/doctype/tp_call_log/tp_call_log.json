@@ -139,7 +139,7 @@
  "modified": "2025-08-21 13:03:30.692064",
  "modified_by": "Administrator",
  "module": "FTelephony",
- "name": "TF Call Log",
+ "name": "TP Call Log",
  "naming_rule": "By fieldname",
  "owner": "Administrator",
  "permissions": [

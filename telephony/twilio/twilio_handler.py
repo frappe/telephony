@@ -14,7 +14,7 @@ class Twilio:
 
 	def __init__(self, settings):
 		"""
-		:param settings: `TF Twilio Settings` doctype
+		:param settings: `TP Twilio Settings` doctype
 		"""
 		self.settings = settings
 		self.account_sid = settings.account_sid
@@ -26,7 +26,7 @@ class Twilio:
 	@classmethod
 	def connect(self):
 		"""Make a twilio connection."""
-		settings = frappe.get_doc("TF Twilio Settings")
+		settings = frappe.get_doc("TP Twilio Settings")
 		if not (settings and settings.enabled):
 			return
 		return Twilio(settings=settings)
@@ -114,11 +114,11 @@ class Twilio:
 
 	@classmethod
 	def get_twilio_client(self):
-		twilio_settings = frappe.get_doc("TF Twilio Settings")
+		twilio_settings = frappe.get_doc("TP Twilio Settings")
 		if not twilio_settings.enabled:
 			frappe.throw(_("Please enable twilio settings before making a call."))
 
-		auth_token = get_decrypted_password("TF Twilio Settings", "TF Twilio Settings", "auth_token")
+		auth_token = get_decrypted_password("TP Twilio Settings", "TP Twilio Settings", "auth_token")
 		client = TwilioClient(twilio_settings.account_sid, auth_token)
 
 		return client
@@ -162,7 +162,7 @@ def get_twilio_number_owners(phone_number):
 	# keep + sign in the number at start of the number
 	phone_number = "".join([c for c in phone_number if c.isdigit() or c == "+"])
 	user_voice_settings = frappe.get_all(
-		"TF Telephony Agent",
+		"TP Telephony Agent",
 		filters={"twilio_number": phone_number},
 		fields=["name", "call_receiving_device"],
 	)

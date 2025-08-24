@@ -1,7 +1,7 @@
 // Copyright (c) 2025, Frappe Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 
-// frappe.ui.form.on("TF Call Log", {
+// frappe.ui.form.on("TP Twilio Settings", {
 // 	refresh(frm) {
 
 // 	},

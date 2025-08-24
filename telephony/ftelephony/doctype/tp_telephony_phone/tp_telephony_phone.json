@@ -31,7 +31,7 @@
  "modified": "2025-08-12 12:56:50.145030",
  "modified_by": "Administrator",
  "module": "FTelephony",
- "name": "TF Telephony Phone",
+ "name": "TP Telephony Phone",
  "owner": "Administrator",
  "permissions": [],
  "row_format": "Dynamic",

@@ -4,14 +4,14 @@ import frappe
 from frappe import _
 from werkzeug.wrappers import Response
 
-from telephony.api import get_contact_by_phone_number
+from telephony.utils import link_call_with_contact, link_call_with_doc
 
 from .twilio_handler import IncomingCall, Twilio, TwilioCallDetails
 
 
 @frappe.whitelist()
 def is_enabled():
-	return frappe.db.get_single_value("TF Twilio Settings", "enabled")
+	return frappe.db.get_single_value("TP Twilio Settings", "enabled")
 
 
 @frappe.whitelist()
@@ -22,7 +22,7 @@ def generate_access_token():
 		return {}
 
 	from_number = frappe.db.get_value(
-		"TF Telephony Agent",
+		"TP Telephony Agent",
 		{"user": frappe.session.user},
 		"twilio_number",
 	)
@@ -44,7 +44,7 @@ def voice(**kwargs):
 	def _get_caller_number(caller):
 		identity = caller.replace("client:", "").strip()
 		user = Twilio.emailid_from_identity(identity)
-		return frappe.db.get_value("TF Telephony Agent", user, "twilio_number")
+		return frappe.db.get_value("TP Telephony Agent", user, "twilio_number")
 
 	args = frappe._dict(kwargs)
 	twilio = Twilio.connect()
@@ -59,7 +59,7 @@ def voice(**kwargs):
 	resp = twilio.generate_twilio_dial_response(from_number, args.To)
 
 	call_details = TwilioCallDetails(args, call_from=from_number)
-	create_call_log(call_details)
+	create_call_log(call_details, link_doc={"doctype": args.link_doctype, "docname": args.link_docname})
 	return Response(resp.to_xml(), mimetype="text/xml")
 
 
@@ -73,36 +73,31 @@ def twilio_incoming_call_handler(**kwargs):
 	return Response(resp.to_xml(), mimetype="text/xml")
 
 
-def create_call_log(call_details: TwilioCallDetails):
+def create_call_log(call_details: TwilioCallDetails, link_doc=None):
 	details = call_details.to_dict()
 
-	call_log = frappe.get_doc({**details, "doctype": "TF Call Log", "telephony_medium": "Twilio"})
+	call_log = frappe.get_doc({**details, "doctype": "TP Call Log", "telephony_medium": "Twilio"})
 
 	contact_number = details.get("from") if details.get("type") == "Incoming" else details.get("to")
-	link(contact_number, call_log)
+	link_call_with_contact(contact_number, call_log)
+
+	if link_doc and link_doc["doctype"] and link_doc["docname"]:
+		link_call_with_doc(call_log, link_doc["doctype"], link_doc["docname"])
 
 	call_log.save(ignore_permissions=True)
 	frappe.db.commit()
 	return call_log
 
 
-def link(contact_number, call_log):
-	contact = get_contact_by_phone_number(contact_number)
-	if contact.get("name"):
-		doctype = "Contact"
-		docname = contact.get("name")
-		call_log.link_with_reference_doc(doctype, docname)
-
-
 def update_call_log(call_sid, status=None):
 	"""Update call log status."""
 	twilio = Twilio.connect()
-	if not (twilio and frappe.db.exists("TF Call Log", call_sid)):
+	if not (twilio and frappe.db.exists("TP Call Log", call_sid)):
 		return
 
 	try:
 		call_details = twilio.get_call_info(call_sid)
-		call_log = frappe.get_doc("TF Call Log", call_sid)
+		call_log = frappe.get_doc("TP Call Log", call_sid)
 		call_log.status = TwilioCallDetails.get_call_status(status or call_details.status)
 		call_log.duration = call_details.duration
 		call_log.start_time = get_datetime_from_timestamp(call_details.start_time)
@@ -122,7 +117,7 @@ def update_recording_info(**kwargs):
 		recording_url = args.RecordingUrl
 		call_sid = args.CallSid
 		update_call_log(call_sid)
-		frappe.db.set_value("TF Call Log", call_sid, "recording_url", recording_url)
+		frappe.db.set_value("TP Call Log", call_sid, "recording_url", recording_url)
 	except Exception:
 		frappe.log_error(title=_("Failed to capture Twilio recording"))
 

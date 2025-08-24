@@ -7,7 +7,7 @@ from frappe import _
 from frappe.model.document import Document
 
 
-class TFExotelSettings(Document):
+class TPExotelSettings(Document):
 	def validate(self):
 		self.verify_credentials()
 

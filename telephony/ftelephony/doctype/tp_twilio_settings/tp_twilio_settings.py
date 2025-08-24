@@ -7,10 +7,15 @@ from frappe.model.document import Document
 from twilio.rest import Client
 
 
-class TFTwilioSettings(Document):
+class TPTwilioSettings(Document):
 	friendly_resource_name = "Frappe Telephony"  # System creates TwiML app & API keys with this name.
 
 	def validate(self):
+		old_account_sid = frappe.db.get_single_value("TP Twilio Settings", "account_sid")
+		if self.account_sid != old_account_sid:
+			self.new_sid = True
+		else:
+			self.new_sid = False
 		self.validate_twilio_account()
 
 	def on_update(self):
@@ -34,14 +39,14 @@ class TFTwilioSettings(Document):
 
 	def set_api_credentials(self, twilio):
 		"""Generate Twilio API credentials if not exist and update them."""
-		if self.api_key and self.api_secret:
+		if self.api_key and self.api_secret and not self.new_sid:
 			return
 		new_key = self.create_api_key(twilio)
 		self.api_key = new_key.sid
 		self.api_secret = new_key.secret
 		frappe.db.set_value(
-			"TF Twilio Settings",
-			"TF Twilio Settings",
+			"TP Twilio Settings",
+			"TP Twilio Settings",
 			{"api_key": self.api_key, "api_secret": self.api_secret},
 		)
 
@@ -49,7 +54,7 @@ class TFTwilioSettings(Document):
 		"""Generate TwiML app credentials if not exist and update them."""
 		credentials = self.get_application(twilio) or self.create_application(twilio)
 		self.twiml_sid = credentials.sid
-		frappe.db.set_value("TF Twilio Settings", "TF Twilio Settings", "twiml_sid", self.twiml_sid)
+		frappe.db.set_value("TP Twilio Settings", "TP Twilio Settings", "twiml_sid", self.twiml_sid)
 
 	def create_api_key(self, twilio):
 		"""Create API keys in twilio account."""

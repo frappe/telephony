@@ -11,9 +11,9 @@ EXTRA_TEST_RECORD_DEPENDENCIES = []  # eg. ["User"]
 IGNORE_TEST_RECORD_DEPENDENCIES = []  # eg. ["User"]
 
 
-class IntegrationTestTFTelephonyAgent(IntegrationTestCase):
+class IntegrationTestTPTelephonyAgent(IntegrationTestCase):
 	"""
-	Integration tests for TFTelephonyAgent.
+	Integration tests for TPTelephonyAgent.
 	Use this class for testing interactions between multiple components.
 	"""
 

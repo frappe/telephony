@@ -5,5 +5,5 @@
 from frappe.model.document import Document
 
 
-class TFTelephonyPhone(Document):
+class TPTelephonyPhone(Document):
 	pass

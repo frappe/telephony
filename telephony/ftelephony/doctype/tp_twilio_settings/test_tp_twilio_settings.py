@@ -11,9 +11,9 @@ EXTRA_TEST_RECORD_DEPENDENCIES = []  # eg. ["User"]
 IGNORE_TEST_RECORD_DEPENDENCIES = []  # eg. ["User"]
 
 
-class IntegrationTestTFTwilioSettings(IntegrationTestCase):
+class IntegrationTestTPTwilioSettings(IntegrationTestCase):
 	"""
-	Integration tests for TFTwilioSettings.
+	Integration tests for TPTwilioSettings.
 	Use this class for testing interactions between multiple components.
 	"""
 

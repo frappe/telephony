@@ -11,9 +11,9 @@ EXTRA_TEST_RECORD_DEPENDENCIES = []  # eg. ["User"]
 IGNORE_TEST_RECORD_DEPENDENCIES = []  # eg. ["User"]
 
 
-class IntegrationTestTFExotelSettings(IntegrationTestCase):
+class IntegrationTestTPExotelSettings(IntegrationTestCase):
 	"""
-	Integration tests for TFExotelSettings.
+	Integration tests for TPExotelSettings.
 	Use this class for testing interactions between multiple components.
 	"""
 

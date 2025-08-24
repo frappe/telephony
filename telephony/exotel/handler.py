@@ -4,7 +4,7 @@ import requests
 from frappe import _
 from frappe.integrations.utils import create_request_log
 
-from telephony.api import get_contact_by_phone_number
+from telephony.utils import link_call_with_contact, link_call_with_doc
 
 # Endpoints for webhook
 
@@ -68,17 +68,17 @@ def handle_request(**kwargs):
 
 # Outgoing Call
 @frappe.whitelist()
-def make_a_call(to_number, from_number=None, caller_id=None):
+def make_a_call(to_number, from_number=None, caller_id=None, link_doctype=None, link_docname=None):
 	if not is_integration_enabled():
 		frappe.throw(_("Please setup Exotel intergration"), title=_("Integration Not Enabled"))
 
 	endpoint = get_exotel_endpoint("Calls/connect.json?details=true")
 
 	if not from_number:
-		from_number = frappe.get_value("TF Telephony Agent", {"user": frappe.session.user}, "mobile_no")
+		from_number = frappe.get_value("TP Telephony Agent", {"user": frappe.session.user}, "mobile_no")
 
 	if not caller_id:
-		caller_id = frappe.get_value("TF Telephony Agent", {"user": frappe.session.user}, "exotel_number")
+		caller_id = frappe.get_value("TP Telephony Agent", {"user": frappe.session.user}, "exotel_number")
 
 	if not caller_id:
 		frappe.throw(
@@ -93,7 +93,7 @@ def make_a_call(to_number, from_number=None, caller_id=None):
 			_("You do not have mobile number set in your Telephony Agent"), title=_("Mobile Number Missing")
 		)
 
-	record_call = frappe.db.get_single_value("TF Exotel Settings", "record_call")
+	record_call = frappe.db.get_single_value("TP Exotel Settings", "record_call")
 
 	try:
 		response = requests.post(
@@ -123,6 +123,7 @@ def make_a_call(to_number, from_number=None, caller_id=None):
 			medium=call_payload.get("PhoneNumberSid"),
 			call_type="Outgoing",
 			agent=frappe.session.user,
+			link_doc={"doctype": link_doctype, "docname": link_docname},
 		)
 
 	call_details = response.json().get("Call", {})
@@ -151,18 +152,18 @@ def get_all_exophones():
 def get_status_updater_url():
 	from frappe.utils.data import get_url
 
-	webhook_verify_token = frappe.db.get_single_value("TF Exotel Settings", "webhook_verify_token")
+	webhook_verify_token = frappe.db.get_single_value("TP Exotel Settings", "webhook_verify_token")
 	return get_url(f"api/method/telephony.exotel.handler.handle_request?key={webhook_verify_token}")
 
 
 def get_exotel_settings():
-	return frappe.get_single("TF Exotel Settings")
+	return frappe.get_single("TP Exotel Settings")
 
 
 def validate_request():
 	# workaround security since exotel does not support request signature
 	# /api/method/<exotel-integration-method>?key=<exotel-webhook=verify-token>
-	webhook_verify_token = frappe.db.get_single_value("TF Exotel Settings", "webhook_verify_token")
+	webhook_verify_token = frappe.db.get_single_value("TP Exotel Settings", "webhook_verify_token")
 	key = frappe.request.args.get("key")
 	is_valid = key and key == webhook_verify_token
 
@@ -172,20 +173,14 @@ def validate_request():
 
 @frappe.whitelist()
 def is_integration_enabled():
-	return frappe.db.get_single_value("TF Exotel Settings", "enabled", True)
+	return frappe.db.get_single_value("TP Exotel Settings", "enabled", True)
 
 
 # Call Log Functions
 def create_call_log(
-	call_id,
-	from_number,
-	to_number,
-	medium,
-	agent,
-	status="Ringing",
-	call_type="Incoming",
+	call_id, from_number, to_number, medium, agent, status="Ringing", call_type="Incoming", link_doc=None
 ):
-	call_log = frappe.new_doc("TF Call Log")
+	call_log = frappe.new_doc("TP Call Log")
 	call_log.id = call_id
 	call_log.to = to_number
 	call_log.medium = medium
@@ -200,25 +195,20 @@ def create_call_log(
 		call_log.caller = agent
 
 	contact_number = from_number if call_type == "Incoming" else to_number
-	link(contact_number, call_log)
+	link_call_with_contact(contact_number, call_log)
+
+	if link_doc and link_doc["doctype"] and link_doc["docname"]:
+		link_call_with_doc(call_log, link_doc["doctype"], link_doc["docname"])
 
 	call_log.save(ignore_permissions=True)
 	frappe.db.commit()
 	return call_log
 
 
-def link(contact_number, call_log):
-	contact = get_contact_by_phone_number(contact_number)
-	if contact.get("name"):
-		doctype = "Contact"
-		docname = contact.get("name")
-		call_log.link_with_reference_doc(doctype, docname)
-
-
 def get_call_log(call_payload):
 	call_log_id = call_payload.get("CallSid")
-	if frappe.db.exists("TF Call Log", call_log_id):
-		return frappe.get_doc("TF Call Log", call_log_id)
+	if frappe.db.exists("TP Call Log", call_log_id):
+		return frappe.get_doc("TP Call Log", call_log_id)
 
 
 def get_call_log_status(call_payload, direction="inbound"):

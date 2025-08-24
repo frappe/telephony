@@ -108,7 +108,7 @@
  "modified": "2025-08-13 12:23:35.600911",
  "modified_by": "Administrator",
  "module": "FTelephony",
- "name": "TF Twilio Settings",
+ "name": "TP Twilio Settings",
  "owner": "Administrator",
  "permissions": [
   {

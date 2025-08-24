@@ -102,7 +102,7 @@
  "modified": "2025-08-18 12:40:06.247707",
  "modified_by": "Administrator",
  "module": "FTelephony",
- "name": "TF Telephony Agent",
+ "name": "TP Telephony Agent",
  "naming_rule": "By fieldname",
  "owner": "Administrator",
  "permissions": [
