@@ -137,7 +137,7 @@ class IncomingCall:
 		"""
 		twilio = Twilio.connect()
 		owners = get_twilio_number_owners(self.to_number)
-		attender = get_the_call_attender(owners, self.from_number)
+		attender = get_the_call_attender(owners)
 
 		if not attender:
 			resp = VoiceResponse()
@@ -189,7 +189,7 @@ def get_active_loggedin_users(users):
 	return [row[0] for row in set(rows)]
 
 
-def get_the_call_attender(owners, caller=None):
+def get_the_call_attender(owners):
 	"""Get attender details from list of owners"""
 	if not owners:
 		return
@@ -243,7 +243,7 @@ class TwilioCallDetails:
 			caller = Twilio.emailid_from_identity(identity) if identity else ""
 		else:
 			owners = get_twilio_number_owners(to_number)
-			attender = get_the_call_attender(owners, from_number)
+			attender = get_the_call_attender(owners)
 			receiver = attender["name"] if attender else ""
 
 		return {

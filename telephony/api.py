@@ -51,15 +51,7 @@ def get_user_default_calling_medium():
 
 @frappe.whitelist()
 def create_call_log(
-	id,
-	telephony_medium,
-	from_number,
-	to_number,
-	duration,
-	status,
-	call_type,
-	caller,
-	receiver,
+	id, telephony_medium, from_number, to_number, duration, status, call_type, caller, receiver, links
 ):
 	call_log = frappe.get_doc(
 		{
@@ -71,6 +63,7 @@ def create_call_log(
 			"telephony_medium": telephony_medium,
 			"from": from_number,
 			"duration": duration,
+			"links": links,
 		}
 	).insert(ignore_permissions=True)
 
