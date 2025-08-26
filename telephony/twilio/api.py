@@ -95,19 +95,41 @@ def update_call_log(call_sid, status=None):
 	if not (twilio and frappe.db.exists("TP Call Log", call_sid)):
 		return
 
-	try:
-		call_details = twilio.get_call_info(call_sid)
-		call_log = frappe.get_doc("TP Call Log", call_sid)
-		call_log.status = TwilioCallDetails.get_call_status(status or call_details.status)
-		call_log.duration = call_details.duration
-		call_log.start_time = get_datetime_from_timestamp(call_details.start_time)
-		call_log.end_time = get_datetime_from_timestamp(call_details.end_time)
-		call_log.save(ignore_permissions=True)
-		frappe.db.commit()
-		return call_log
-	except Exception:
-		frappe.log_error(title="Error while updating call record")
-		frappe.db.commit()
+	# Retry logic for update conflict when multiple requests are made
+	MAX_RETRIES = 3
+	for i in range(MAX_RETRIES):
+		try:
+			call_details = twilio.get_call_info(call_sid)
+			call_log = frappe.get_doc("TP Call Log", call_sid)
+
+			call_log.status = TwilioCallDetails.get_call_status(status or call_details.status)
+			call_log.duration = call_details.duration
+			call_log.start_time = get_datetime_from_timestamp(call_details.start_time)
+			call_log.end_time = get_datetime_from_timestamp(call_details.end_time)
+
+			call_log.save(ignore_permissions=True)
+			frappe.db.commit()
+			return call_log
+
+		except frappe.exceptions.TimestampMismatchError:
+			frappe.clear_messages()
+			if i == MAX_RETRIES - 1:
+				frappe.log_error(
+					f"Failed to update call log {call_sid} after {MAX_RETRIES} retries",
+					"Call Log Update Error",
+				)
+				raise
+			# Auto-retry will fetch fresh document on next iteration
+			continue
+
+		except Exception as e:
+			frappe.log_error(
+				f"Error while updating call record: {str(e)}\n{frappe.get_traceback()}",
+				"Call Log Update Error",
+			)
+			frappe.db.commit()
+			break
+	return
 
 
 @frappe.whitelist(allow_guest=True)

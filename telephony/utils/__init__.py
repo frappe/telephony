@@ -127,7 +127,7 @@ def get_contact(phone_number):
 	)
 	query = (
 		frappe.qb.from_(Contact)
-		.select(Contact.name, Contact.full_name, Contact.image, Contact.phone)
+		.select(Contact.name, Contact.full_name, Contact.image, Contact.phone, Contact.mobile_no)
 		.where(normalized_phone.like(f"%{cleaned_number}%"))
 		.orderby("modified", order=Order.desc)
 	)
