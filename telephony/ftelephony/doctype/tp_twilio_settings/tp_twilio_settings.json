@@ -105,6 +105,7 @@
    "read_only": 1
   },
   {
+   "depends_on": "enabled",
    "fieldname": "app_name",
    "fieldtype": "Data",
    "label": " App Name"
@@ -123,7 +124,7 @@
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-08-29 18:32:32.878169",
+ "modified": "2025-09-04 10:14:17.013637",
  "modified_by": "Administrator",
  "module": "FTelephony",
  "name": "TP Twilio Settings",

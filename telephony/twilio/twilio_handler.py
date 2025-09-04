@@ -116,7 +116,7 @@ class Twilio:
 	def get_twilio_client(self):
 		twilio_settings = frappe.get_doc("TP Twilio Settings")
 		if not twilio_settings.enabled:
-			frappe.throw(_("Please enable twilio settings before making a call."))
+			frappe.throw(_("Please enable twilio to proceed."))
 
 		auth_token = get_decrypted_password("TP Twilio Settings", "TP Twilio Settings", "auth_token")
 		client = TwilioClient(twilio_settings.account_sid, auth_token)
