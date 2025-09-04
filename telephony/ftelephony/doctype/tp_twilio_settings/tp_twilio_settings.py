@@ -11,8 +11,6 @@ class TPTwilioSettings(Document):
 	friendly_resource_name = "Frappe Telephony"  # System creates TwiML app & API keys with this name.
 
 	def validate(self):
-		if not self.enabled:
-			return
 		old_account_sid = frappe.db.get_single_value("TP Twilio Settings", "account_sid")
 		if self.account_sid != old_account_sid:
 			self.new_sid = True
@@ -24,21 +22,6 @@ class TPTwilioSettings(Document):
 		# Single doctype records are created in DB at time of installation and those field values are set as null.
 		# This condition make sure that we handle null.
 		if not self.account_sid:
-			return
-
-		if not self.enabled:
-			frappe.db.set_value(
-				"TP Twilio Settings",
-				"TP Twilio Settings",
-				{
-					"account_sid": None,
-					"auth_token": None,
-					"api_key": None,
-					"api_secret": None,
-					"twiml_sid": None,
-					"app_name": None,
-				},
-			)
 			return
 
 		twilio = Client(self.account_sid, self.get_password("auth_token"))
