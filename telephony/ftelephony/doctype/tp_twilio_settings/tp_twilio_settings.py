@@ -77,7 +77,13 @@ class TPTwilioSettings(Document):
 		"""Get TwiML App from twilio account if exists."""
 		friendly_name = friendly_name or self.friendly_resource_name
 		applications = twilio.applications.list(friendly_name)
-		return applications and applications[0]
+		default_application = twilio.applications.list(self.friendly_resource_name)
+
+		if applications:
+			return applications[0]
+		if default_application:
+			return default_application[0]
+		return None
 
 	def create_application(self, twilio, friendly_name=None):
 		"""Create TwilML App in twilio account."""
