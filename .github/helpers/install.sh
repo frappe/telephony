@@ -9,11 +9,11 @@ sudo apt remove mysql-server mysql-client
 sudo apt install libcups2-dev redis-server mariadb-client libmariadb-dev
 
 pip install frappe-bench
-git clone "https://github.com/frappe/frappe" --branch "develop" --depth 1 
+
+git clone "https://github.com/frappe/frappe" --branch "develop" --depth 1
 bench init --skip-assets --frappe-path ~/frappe --python "$(which python)" frappe-bench
 
 mkdir ~/frappe-bench/sites/test_site
-
 cp -r "${GITHUB_WORKSPACE}/.github/helpers/site_config_mariadb.json" ~/frappe-bench/sites/test_site/site_config.json
 
 mariadb --host 127.0.0.1 --port 3306 -u root -proot -e "SET GLOBAL character_set_server = 'utf8mb4'"
@@ -42,8 +42,10 @@ sed -i 's/redis_socketio:/# redis_socketio:/g' Procfile
 
 bench get-app telephony "${GITHUB_WORKSPACE}"
 bench setup requirements --dev
-
+bench build
 
 bench start &>> ~/frappe-bench/bench_start.log &
 CI=Yes bench build --app frappe &
 bench --site test_site reinstall --yes
+
+bench --verbose --site test_site install-app telephony
