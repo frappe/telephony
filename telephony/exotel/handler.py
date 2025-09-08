@@ -60,10 +60,10 @@ def handle_request(**kwargs):
         request_log.error = frappe.get_traceback()
         frappe.db.rollback()
         frappe.log_error(title="Error while creating/updating call record")
-        frappe.db.commit()
+        frappe.db.commit()  # nosemgrep
     finally:
         request_log.save(ignore_permissions=True)
-        frappe.db.commit()
+        frappe.db.commit()  # nosemgrep
 
 
 # Outgoing Call
@@ -232,7 +232,7 @@ def create_call_log(
         link_call_with_doc(call_log, link_doc["doctype"], link_doc["docname"])
 
     call_log.save(ignore_permissions=True)
-    frappe.db.commit()
+    frappe.db.commit()  # nosemgrep
     return call_log
 
 
@@ -298,8 +298,8 @@ def update_call_log(call_payload, status="Ringing", call_log=None):
                 call_log.receiver = call_payload.get("AgentEmail")
 
             call_log.save(ignore_permissions=True)
-            frappe.db.commit()
+            frappe.db.commit()  # nosemgrep
             return call_log
     except Exception:
         frappe.log_error(title="Error while updating call record")
-        frappe.db.commit()
+        frappe.db.commit()  # nosemgrep

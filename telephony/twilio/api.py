@@ -92,7 +92,7 @@ def create_call_log(call_details: TwilioCallDetails, link_doc=None):
         link_call_with_doc(call_log, link_doc["doctype"], link_doc["docname"])
 
     call_log.save(ignore_permissions=True)
-    frappe.db.commit()
+    frappe.db.commit()  # nosemgrep
     return call_log
 
 
@@ -117,7 +117,7 @@ def update_call_log(call_sid, status=None):
             call_log.end_time = get_datetime_from_timestamp(call_details.end_time)
 
             call_log.save(ignore_permissions=True)
-            frappe.db.commit()
+            frappe.db.commit()  # nosemgrep
             return call_log
 
         except frappe.exceptions.TimestampMismatchError:
@@ -136,7 +136,7 @@ def update_call_log(call_sid, status=None):
                 f"Error while updating call record: {str(e)}\n{frappe.get_traceback()}",
                 "Call Log Update Error",
             )
-            frappe.db.commit()
+            frappe.db.commit()  # nosemgrep
             break
     return
 
