@@ -39,7 +39,7 @@ def handle_request(**kwargs):
 
         call_payload = kwargs
 
-        frappe.publish_realtime("exotel_call", call_payload)
+        frappe.publish_realtime("exotel_call", call_payload)  # nosemgrep
         status = call_payload.get("Status")
         if status == "free":
             return

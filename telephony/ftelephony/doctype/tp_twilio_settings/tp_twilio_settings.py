@@ -48,8 +48,7 @@ class TPTwilioSettings(Document):
         new_key = self.create_api_key(twilio)
         self.api_key = new_key.sid
         self.api_secret = new_key.secret
-        frappe.db.set_value(
-            "TP Twilio Settings",
+        frappe.db.set_single_value(
             "TP Twilio Settings",
             {"api_key": self.api_key, "api_secret": self.api_secret},
         )
@@ -61,8 +60,7 @@ class TPTwilioSettings(Document):
         )
         self.twiml_sid = credentials.sid
         self.app_name = credentials.friendly_name
-        frappe.db.set_value(
-            "TP Twilio Settings",
+        frappe.db.set_single_value(
             "TP Twilio Settings",
             {"twiml_sid": self.twiml_sid, "app_name": self.app_name},
         )
@@ -103,8 +101,7 @@ class TPTwilioSettings(Document):
 
     def fetch_applications(self, twilio):
         applications = [app.friendly_name for app in twilio.applications.list()]
-        frappe.db.set_value(
-            "TP Twilio Settings",
+        frappe.db.set_single_value(
             "TP Twilio Settings",
             "twilio_apps",
             ",".join(applications),

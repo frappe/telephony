@@ -195,8 +195,7 @@ def get_datetime_from_timestamp(timestamp):
 def fetch_applications():
     twilio = Twilio.get_twilio_client()
     applications = [app.friendly_name for app in twilio.applications.list()]
-    frappe.db.set_value(
-        "TP Twilio Settings",
+    frappe.db.set_single_value(
         "TP Twilio Settings",
         "twilio_apps",
         ",".join(applications),
