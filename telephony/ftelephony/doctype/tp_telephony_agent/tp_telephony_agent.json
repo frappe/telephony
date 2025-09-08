@@ -1,0 +1,127 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:user",
+ "creation": "2025-08-06 12:01:41.895745",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "user",
+  "user_name",
+  "column_break_lekf",
+  "mobile_no",
+  "default_medium",
+  "section_break_riia",
+  "twilio",
+  "twilio_number",
+  "call_receiving_device",
+  "column_break_zgsa",
+  "exotel",
+  "exotel_number"
+ ],
+ "fields": [
+  {
+   "fieldname": "user",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "User",
+   "options": "User",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fetch_from": "user.full_name",
+   "fieldname": "user_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "User Name"
+  },
+  {
+   "fieldname": "column_break_lekf",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "mobile_no",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Mobile No."
+  },
+  {
+   "fieldname": "default_medium",
+   "fieldtype": "Select",
+   "label": "Default Medium",
+   "options": "\nTwilio\nExotel"
+  },
+  {
+   "fieldname": "section_break_riia",
+   "fieldtype": "Section Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "twilio",
+   "fieldtype": "Check",
+   "label": "Twilio"
+  },
+  {
+   "depends_on": "twilio",
+   "fieldname": "twilio_number",
+   "fieldtype": "Data",
+   "label": "Twilio Number",
+   "mandatory_depends_on": "twilio"
+  },
+  {
+   "depends_on": "twilio",
+   "fieldname": "call_receiving_device",
+   "fieldtype": "Select",
+   "label": "Device",
+   "options": "Computer\nPhone"
+  },
+  {
+   "fieldname": "column_break_zgsa",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "exotel",
+   "fieldtype": "Check",
+   "label": "Exotel"
+  },
+  {
+   "depends_on": "exotel",
+   "fieldname": "exotel_number",
+   "fieldtype": "Data",
+   "label": "Exotel Number"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2025-08-18 12:40:06.247707",
+ "modified_by": "Administrator",
+ "module": "FTelephony",
+ "name": "TP Telephony Agent",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "user_name"
+}
