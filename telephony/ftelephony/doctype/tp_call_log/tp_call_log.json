@@ -136,7 +136,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-08-21 13:03:30.692064",
+ "modified": "2025-09-16 16:09:51.117835",
  "modified_by": "Administrator",
  "module": "FTelephony",
  "name": "TP Call Log",
@@ -151,7 +151,7 @@
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "Sales User",
+   "role": "TP Agent",
    "share": 1,
    "write": 1
   },
@@ -163,7 +163,7 @@
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "Sales Manager",
+   "role": "TP Manager",
    "share": 1,
    "write": 1
   }
