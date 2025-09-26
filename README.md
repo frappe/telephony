@@ -1,6 +1,6 @@
 ### Telephony
 
-Telephony for Frappe apps
+Telephony for Frappe apps. Adds Exotel & Twilio integration in any Frappe app.
 
 ### Installation
 
