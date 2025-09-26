@@ -12,6 +12,12 @@ bench get-app telephony --branch develop
 bench install-app telephony
 ```
 
+### Twilio Setup
+https://docs.frappe.io/helpdesk/twilio
+
+### Exotel Setup
+https://docs.frappe.io/helpdesk/exotel
+
 ### Contributing
 
 This app uses `pre-commit` for code formatting and linting. Please [install pre-commit](https://pre-commit.com/#installation) and enable it for this repository:
