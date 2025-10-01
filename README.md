@@ -2,6 +2,8 @@
 
 Telephony for Frappe apps. Adds Exotel & Twilio integration in any Frappe app.
 
+---
+
 ### Installation
 
 You can install this app using the [bench](https://github.com/frappe/bench) CLI:
@@ -11,6 +13,8 @@ cd $PATH_TO_YOUR_BENCH
 bench get-app telephony --branch develop
 bench install-app telephony
 ```
+
+---
 
 ### Configuration
 
@@ -36,6 +40,8 @@ This defines agents who can make and receive calls, this handles settings like l
 
 Webhooks and API configuration for Telephony app will be found in the respective app's documentation.
 
+---
+
 ### Twilio Setup
 
 https://docs.frappe.io/helpdesk/twilio
@@ -43,6 +49,8 @@ https://docs.frappe.io/helpdesk/twilio
 ### Exotel Setup
 
 https://docs.frappe.io/helpdesk/exotel
+
+---
 
 ### Contributing
 
@@ -59,6 +67,8 @@ Pre-commit is configured to use the following tools for checking and formatting 
 - eslint
 - prettier
 - pyupgrade
+
+---
 
 ### License
 
