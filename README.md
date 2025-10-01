@@ -38,7 +38,7 @@ This defines agents who can make and receive calls, this handles settings like l
 
 #### Webhooks and APIs
 
-Webhooks and API configuration for Telephony app will be found in the respective app's documentation.
+Webhooks and API configuration for Telephony app will be found in the respective app's documentation that uses this app.
 
 ---
 
