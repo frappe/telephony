@@ -124,7 +124,7 @@
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-09-04 10:14:17.013637",
+ "modified": "2025-09-16 16:09:35.057408",
  "modified_by": "Administrator",
  "module": "FTelephony",
  "name": "TP Twilio Settings",
@@ -141,34 +141,21 @@
    "write": 1
   },
   {
-   "delete": 1,
-   "email": 1,
-   "permlevel": 1,
-   "print": 1,
-   "read": 1,
-   "role": "System Manager",
-   "share": 1,
-   "write": 1
-  },
-  {
    "create": 1,
    "delete": 1,
    "email": 1,
    "print": 1,
    "read": 1,
-   "role": "Sales Manager",
+   "role": "TP Manager",
    "share": 1,
    "write": 1
   },
   {
-   "delete": 1,
    "email": 1,
-   "permlevel": 1,
    "print": 1,
    "read": 1,
-   "role": "Sales Manager",
-   "share": 1,
-   "write": 1
+   "role": "All",
+   "share": 1
   }
  ],
  "row_format": "Dynamic",

@@ -5,6 +5,11 @@ app_description = "Telephony for Frappe apps"
 app_email = "pratik@frappe.io"
 app_license = "agpl-3.0"
 
+
+fixtures = [
+    {"dt": "Role", "filters": [["role_name", "like", "TP%"]]},
+]
+
 # Apps
 # ------------------
 
