@@ -136,13 +136,25 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-09-16 16:09:51.117835",
+ "modified": "2025-10-10 15:03:12.638731",
  "modified_by": "Administrator",
  "module": "FTelephony",
  "name": "TP Call Log",
  "naming_rule": "By fieldname",
  "owner": "Administrator",
  "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
   {
    "create": 1,
    "delete": 1,
