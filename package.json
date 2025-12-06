@@ -1,6 +1,5 @@
 {
   "dependencies": {
-    "esbuild": "0.19.12",
-    "jssip": "3.10.0"
+    "esbuild": "0.19.12"
   }
 }
