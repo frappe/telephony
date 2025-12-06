@@ -341,6 +341,7 @@ frappe.provide("telephony.sip");
       this.resumeBtn = null;
       this.remoteMediaAttached = false;
       this.currentCallId = null;
+      this.currentCallStartTs = null;
       this.ua = null;
       this.session = null;
       this.domain = null;
@@ -856,6 +857,9 @@ frappe.provide("telephony.sip");
       session.on("accepted", (data) => {
         debugLog("session accepted", { id: callId, originator: data?.originator });
         this._updateStatus("in call");
+        if (!this.currentCallStartTs) {
+          this.currentCallStartTs = Date.now();
+        }
         this._logCall("In Progress");
         this._stopRingtone();
         this._stopRingback();
@@ -868,6 +872,9 @@ frappe.provide("telephony.sip");
       session.on("confirmed", () => {
         debugLog("session confirmed", { id: callId });
         this._updateStatus("in call");
+        if (!this.currentCallStartTs) {
+          this.currentCallStartTs = Date.now();
+        }
         this._resumeAudio();
         this._stopRingtone();
         this._stopRingback();
@@ -897,18 +904,35 @@ frappe.provide("telephony.sip");
       });
 
       const handleEnded = (data) => {
+        // In some stacks both "bye" and "terminated" fire; log only once.
+        if (!this.currentCallId) {
+          debugLog("session ended (duplicate event, ignoring)", {
+            id: callId,
+            originator: data?.originator,
+            cause: data?.cause,
+          });
+          return;
+        }
         debugLog("session ended", {
           id: callId,
           originator: data?.originator,
           cause: data?.cause,
         });
         this._updateStatus("completed");
-        this._logCall("Completed");
+        const durationSeconds =
+          this.currentCallStartTs && typeof this.currentCallStartTs === "number"
+            ? Math.max(
+                0,
+                Math.round((Date.now() - this.currentCallStartTs) / 1000)
+              )
+            : undefined;
+        this._logCall("Completed", { duration: durationSeconds });
         this._stopRingtone();
         this._stopRingback();
         this._detachRemoteAudio();
         this.session = null;
         this.currentCallId = null;
+        this.currentCallStartTs = null;
         this._setRemoteInfo("Ready");
         this._updateControls();
       };
@@ -919,7 +943,7 @@ frappe.provide("telephony.sip");
       const isIncoming = this._inferDirection(session) === "incoming";
       if (isIncoming) {
         this._updateStatus("incoming");
-        this._logCall("Initiated", true);
+        this._logCall("Initiated");
         this._togglePanel(true);
         const remoteUser = this._identityUser(this._remoteIdentity(session));
         if (remoteUser) {
@@ -942,8 +966,9 @@ frappe.provide("telephony.sip");
       this._updateControls();
     }
 
-    _logCall(status, incoming = false) {
+    _logCall(status, options = {}) {
       if (!this.currentCallId) this.currentCallId = randomId();
+      const incoming = this._inferDirection(this.session) === "incoming";
       const direction = incoming ? "Incoming" : "Outgoing";
       const remoteIdentity = this._remoteIdentity(this.session);
       const localIdentity = this._localIdentity(this.session);
@@ -951,8 +976,13 @@ frappe.provide("telephony.sip");
         ? this._identityUser(remoteIdentity)
         : this._identityUser(localIdentity) || this.config?.username || "";
       const toNumber = incoming
-        ? this._identityUser(localIdentity) || this.config?.username || ""
+        ? this.config?.extension || this.config?.username || this._identityUser(localIdentity) || ""
         : this._identityUser(remoteIdentity) || this.dialInput?.value || "";
+
+      const duration =
+        typeof options.duration === "number" && options.duration >= 0
+          ? options.duration
+          : undefined;
 
       frappe.call({
         method: "telephony.sip.api.log_sip_call",
@@ -963,6 +993,7 @@ frappe.provide("telephony.sip");
           from_number: fromNumber,
           to_number: toNumber,
           status,
+          ...(duration !== undefined ? { duration } : {}),
         },
       });
     }
@@ -1426,7 +1457,6 @@ frappe.provide("telephony.sip");
         }
       }
       this.session = null;
-      this.currentCallId = null;
       this.remoteMediaAttached = false;
       this._detachRemoteAudio();
       this._setRemoteInfo("Ready");

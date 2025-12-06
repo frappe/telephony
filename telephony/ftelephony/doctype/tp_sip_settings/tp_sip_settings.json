@@ -31,12 +31,12 @@
    "label": "Enabled"
   },
   {
-   "default": "Asterisk",
+   "default": "Generic",
    "fieldname": "pbx_type",
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "PBX Type",
-   "options": "Asterisk\nFreeSWITCH\nOther"
+   "options": "Generic\nAsterisk (not wired yet)"
   },
   {
    "depends_on": "enabled",

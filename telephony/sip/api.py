@@ -143,7 +143,13 @@ def log_sip_call(**kwargs):
             }
         )
 
+    now = frappe.utils.now_datetime()
+
+    # Telephony medium + human-readable medium label
     call_log.telephony_medium = "SIP"
+    if not call_log.medium:
+        call_log.medium = "Desk Softphone"
+
     call_log.status = status
     call_log.type = direction
     setattr(call_log, "from", args.from_number)
@@ -151,12 +157,22 @@ def log_sip_call(**kwargs):
     call_log.sip_call_id = call_id
     call_log.sip_dialog_id = dialog_id
 
+    # Populate start_time / end_time
+    if not call_log.start_time:
+        call_log.start_time = now
+    terminal_statuses = {"Completed", "Failed", "Busy", "No Answer", "Canceled"}
+    if status in terminal_statuses:
+        call_log.end_time = now
+
+    # Caller / receiver attribution
     if direction == "Incoming":
-        call_log.receiver = args.get("receiver") or call_log.receiver
-        call_log.caller = call_log.caller
+        # For incoming calls, "receiver" is the logged-in Desk agent.
+        call_log.receiver = args.get("receiver") or call_log.receiver or frappe.session.user
+        # Caller is the remote party; do not override it here.
     else:
+        # For outgoing calls, "caller" is the logged-in Desk agent.
         call_log.caller = args.get("caller") or call_log.caller or frappe.session.user
-        call_log.receiver = call_log.receiver
+        # Receiver is the remote party; leave as-is.
 
     if args.get("duration") is not None:
         call_log.duration = cint(args.duration)
