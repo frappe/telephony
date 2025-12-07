@@ -155,9 +155,20 @@ frappe.provide("telephony.sip");
   text-overflow: ellipsis;
 }
 #telephony-sip-softphone .tp-softphone-timer {
-  font-size: 12px;
-  color: var(--tp-muted);
-  margin: 0 0 4px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--tp-text);
+  margin: 2px 0 6px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  display: block;
+  width: fit-content;
+  margin-left: auto;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--tp-surface-muted);
+  min-width: 68px; /* fits mm:ss and hh:mm:ss */
+  visibility: hidden;
 }
 #telephony-sip-softphone .tp-softphone-dial-input {
   width: 100%;
@@ -339,10 +350,13 @@ frappe.provide("telephony.sip");
     const h = Math.floor(secs / 3600);
     const m = Math.floor((secs % 3600) / 60);
     const s = secs % 60;
-    const hh = String(h).padStart(2, "0");
     const mm = String(m).padStart(2, "0");
     const ss = String(s).padStart(2, "0");
-    return `${hh}:${mm}:${ss}`;
+    if (h > 0) {
+      const hh = String(h).padStart(2, "0");
+      return `${hh}:${mm}:${ss}`;
+    }
+    return `${mm}:${ss}`;
   };
 
   class Softphone {
@@ -619,7 +633,7 @@ frappe.provide("telephony.sip");
               <div class="tp-softphone-display">
                 <div class="tp-softphone-remote-label">Remote</div>
                 <div class="tp-softphone-remote-value">Ready</div>
-                <div class="tp-softphone-timer" aria-hidden="true">00:00:00</div>
+                <div class="tp-softphone-timer" aria-hidden="true"></div>
                 <input type="text" class="tp-softphone-dial-input" placeholder="${placeholder}" />
               </div>
               <div class="tp-softphone-actions">
@@ -734,7 +748,7 @@ frappe.provide("telephony.sip");
       this.status = text;
       this.statusMessage = detail || "";
       if (this.statusEl) {
-        this.statusEl.textContent = `Status: ${text}${detail ? " – " + detail : ""}`;
+        this.statusEl.textContent = `${text}${detail ? " – " + detail : ""}`;
       }
       this._updateControls();
       debugLog("[status]", text, detail || "");
@@ -773,7 +787,7 @@ frappe.provide("telephony.sip");
       }
       const update = () => {
         if (!this.currentCallStartTs) {
-          this.timerEl.textContent = "00:00:00";
+          this.timerEl.textContent = "";
           return;
         }
         const elapsedSeconds = (Date.now() - this.currentCallStartTs) / 1000;
@@ -781,6 +795,7 @@ frappe.provide("telephony.sip");
       };
       update();
       this.callTimerId = window.setInterval(update, 1000);
+      this.timerEl.style.visibility = "visible";
     }
 
     _stopCallTimer() {
@@ -789,7 +804,8 @@ frappe.provide("telephony.sip");
         this.callTimerId = null;
       }
       if (this.timerEl) {
-        this.timerEl.textContent = "00:00:00";
+        this.timerEl.textContent = "";
+        this.timerEl.style.visibility = "hidden";
       }
     }
 
