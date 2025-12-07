@@ -154,6 +154,11 @@ frappe.provide("telephony.sip");
   overflow: hidden;
   text-overflow: ellipsis;
 }
+#telephony-sip-softphone .tp-softphone-timer {
+  font-size: 12px;
+  color: var(--tp-muted);
+  margin: 0 0 4px;
+}
 #telephony-sip-softphone .tp-softphone-dial-input {
   width: 100%;
   border-radius: 12px;
@@ -329,6 +334,17 @@ frappe.provide("telephony.sip");
     return `sip:${target}`;
   };
 
+  const formatDurationHms = (totalSeconds) => {
+    const secs = Math.max(0, Math.floor(totalSeconds || 0));
+    const h = Math.floor(secs / 3600);
+    const m = Math.floor((secs % 3600) / 60);
+    const s = secs % 60;
+    const hh = String(h).padStart(2, "0");
+    const mm = String(m).padStart(2, "0");
+    const ss = String(s).padStart(2, "0");
+    return `${hh}:${mm}:${ss}`;
+  };
+
   class Softphone {
     constructor() {
       this.config = null;
@@ -345,6 +361,7 @@ frappe.provide("telephony.sip");
       this.remoteMediaAttached = false;
       this.currentCallId = null;
       this.currentCallStartTs = null;
+      this.callTimerId = null;
       this.ua = null;
       this.session = null;
       this.domain = null;
@@ -602,6 +619,7 @@ frappe.provide("telephony.sip");
               <div class="tp-softphone-display">
                 <div class="tp-softphone-remote-label">Remote</div>
                 <div class="tp-softphone-remote-value">Ready</div>
+                <div class="tp-softphone-timer" aria-hidden="true">00:00:00</div>
                 <input type="text" class="tp-softphone-dial-input" placeholder="${placeholder}" />
               </div>
               <div class="tp-softphone-actions">
@@ -628,6 +646,7 @@ frappe.provide("telephony.sip");
       this.resumeBtn = this.root.querySelector(".tp-softphone-resume");
       this.dialInput = this.root.querySelector(".tp-softphone-dial-input");
       this.remoteInfoEl = this.root.querySelector(".tp-softphone-remote-value");
+      this.timerEl = this.root.querySelector(".tp-softphone-timer");
       this.callBtn = this.root.querySelector('[data-action="call"]');
       this.answerBtn = this.root.querySelector('[data-action="answer"]');
       this.endBtn = this.root.querySelector('[data-action="end"]');
@@ -741,6 +760,36 @@ frappe.provide("telephony.sip");
       if (this.resumeBtn) {
         const shouldShow = active && (this.remoteAudio?.paused || this.status === "in call");
         this.resumeBtn.style.display = shouldShow ? "block" : "none";
+      }
+    }
+
+    _startCallTimer() {
+      if (!this.timerEl) return;
+      if (!this.currentCallStartTs) {
+        this.currentCallStartTs = Date.now();
+      }
+      if (this.callTimerId) {
+        clearInterval(this.callTimerId);
+      }
+      const update = () => {
+        if (!this.currentCallStartTs) {
+          this.timerEl.textContent = "00:00:00";
+          return;
+        }
+        const elapsedSeconds = (Date.now() - this.currentCallStartTs) / 1000;
+        this.timerEl.textContent = formatDurationHms(elapsedSeconds);
+      };
+      update();
+      this.callTimerId = window.setInterval(update, 1000);
+    }
+
+    _stopCallTimer() {
+      if (this.callTimerId) {
+        clearInterval(this.callTimerId);
+        this.callTimerId = null;
+      }
+      if (this.timerEl) {
+        this.timerEl.textContent = "00:00:00";
       }
     }
 
@@ -868,6 +917,7 @@ frappe.provide("telephony.sip");
         if (!this.currentCallStartTs) {
           this.currentCallStartTs = Date.now();
         }
+        this._startCallTimer();
         this._logCall("In Progress");
         this._stopRingtone();
         this._stopRingback();
@@ -883,6 +933,7 @@ frappe.provide("telephony.sip");
         if (!this.currentCallStartTs) {
           this.currentCallStartTs = Date.now();
         }
+        this._startCallTimer();
         this._resumeAudio();
         this._stopRingtone();
         this._stopRingback();
@@ -905,6 +956,7 @@ frappe.provide("telephony.sip");
         this._stopRingtone();
         this._stopRingback();
         this._detachRemoteAudio();
+        this._stopCallTimer();
         this.session = null;
         this.currentCallId = null;
         this._setRemoteInfo("Ready");
@@ -938,6 +990,7 @@ frappe.provide("telephony.sip");
         this._stopRingtone();
         this._stopRingback();
         this._detachRemoteAudio();
+        this._stopCallTimer();
         this.session = null;
         this.currentCallId = null;
         this.currentCallStartTs = null;
@@ -1447,6 +1500,8 @@ frappe.provide("telephony.sip");
           // ignore
         }
       }
+      this._stopCallTimer();
+      this.currentCallStartTs = null;
       this.session = null;
       this.remoteMediaAttached = false;
       this._detachRemoteAudio();
