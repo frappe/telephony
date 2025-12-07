@@ -756,21 +756,68 @@ frappe.provide("telephony.sip");
 
     _updateControls() {
       const active = this._sessionActive(this.session);
+      const direction = this._inferDirection(this.session);
+      const status = this.status;
+
+      const isIncoming = direction === "incoming";
+
+      const showCall =
+        !active &&
+        !isIncoming &&
+        status !== "incoming" &&
+        status !== "dialing" &&
+        status !== "ringing";
+      const showAnswer = isIncoming && (status === "incoming" || status === "ringing");
+      const showEnd = active || status === "incoming" || status === "dialing" || status === "ringing";
+      const showMute = active;
+
+      const setVisibility = (el, visible) => {
+        if (!el) return;
+        el.style.display = visible ? "" : "none";
+      };
+
+      // Reset any previous spanning before we recompute per row.
+      if (this.callBtn) this.callBtn.style.gridColumn = "";
+      if (this.answerBtn) this.answerBtn.style.gridColumn = "";
+      if (this.endBtn) this.endBtn.style.gridColumn = "";
+      if (this.muteBtn) this.muteBtn.style.gridColumn = "";
+
       if (this.callBtn) {
         this.callBtn.disabled = active;
+        setVisibility(this.callBtn, showCall);
       }
       if (this.endBtn) {
-        this.endBtn.disabled = !active;
+        const canEnd = showEnd;
+        this.endBtn.disabled = !canEnd;
+        setVisibility(this.endBtn, canEnd);
       }
       if (this.muteBtn) {
         this.muteBtn.disabled = !active;
         this.muteBtn.textContent = this.isMuted ? "Unmute" : "Mute";
+        setVisibility(this.muteBtn, showMute);
       }
       if (this.answerBtn) {
-        const canAnswer = this.status === "incoming";
+        const canAnswer = isIncoming && (status === "incoming" || status === "ringing");
         this.answerBtn.disabled = !canAnswer;
         this.answerBtn.classList.toggle("tp-softphone-highlight", canAnswer);
+        setVisibility(this.answerBtn, showAnswer);
       }
+
+      // Per-row full-width logic: if exactly one button in the
+      // top row (Call/Answer) or bottom row (End/Mute) is visible,
+      // let it span the full width of that row.
+      const setRowFullWidth = (buttons) => {
+        const visible = buttons.filter(
+          (el) => el && el.style.display !== "none"
+        );
+        if (visible.length === 1) {
+          visible[0].style.gridColumn = "1 / -1";
+        }
+      };
+
+      setRowFullWidth([this.callBtn, this.answerBtn]);
+      setRowFullWidth([this.endBtn, this.muteBtn]);
+
       if (this.resumeBtn) {
         const shouldShow = active && (this.remoteAudio?.paused || this.status === "in call");
         this.resumeBtn.style.display = shouldShow ? "block" : "none";
