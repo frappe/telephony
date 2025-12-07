@@ -377,7 +377,10 @@ frappe.provide("telephony.sip");
           return;
         }
         this._initSounds();
-        await this._primeMediaDevices();
+        // Only use the microphone when we actually place or answer a call.
+        // Here we just best-effort detect devices without triggering a
+        // getUserMedia permission prompt.
+        this._primeMediaDevices();
         this._render();
         this.domain = deriveDomain(this.config);
         await this._setupSip();
@@ -999,27 +1002,10 @@ frappe.provide("telephony.sip");
     }
 
     async _primeMediaDevices() {
-      if (!navigator.mediaDevices?.getUserMedia) return;
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          audio: true,
-          video: false,
-        });
-        if (isSafari) {
-          this.primedStream = stream;
-          window.addEventListener(
-            "beforeunload",
-            () => {
-              this.primedStream?.getTracks?.().forEach((track) => track.stop());
-            },
-            { once: true }
-          );
-        } else {
-          stream.getTracks().forEach((track) => track.stop());
-        }
-      } catch (err) {
-        debugLog("media warmup failed", err?.message || err);
-      }
+      // Do NOT call getUserMedia here – we only want to request microphone
+      // access when the user actually places or answers a call. This method
+      // is now a best-effort helper to learn about available devices without
+      // triggering a permission prompt.
       if (navigator.mediaDevices?.enumerateDevices) {
         try {
           const devices = await navigator.mediaDevices.enumerateDevices();
