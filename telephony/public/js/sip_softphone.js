@@ -8,6 +8,7 @@ frappe.provide("telephony.sip");
   const LAYOUT_STORAGE_KEY = "tp_sip_layout_v1";
   const BASE_PANEL_WIDTH = 320;
   const BASE_PANEL_HEIGHT = 568;
+  const COMPACT_PANEL_HEIGHT = 240;
   const VIEWPORT_HEIGHT_RATIO = 0.5;
   const MIN_PANEL_SCALE = 0.4;
   const MAX_PANEL_SCALE = 1;
@@ -48,14 +49,14 @@ frappe.provide("telephony.sip");
   width: 48px;
   height: 48px;
   border-radius: 999px;
-  border: none;
-  background: var(--tp-primary);
-  color: #fff;
-  font-size: 24px;
-  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-direction: row;
+  gap: 0;
+  border: none;
+  background: var(--tp-primary);
+  color: #fff;
   box-shadow: 0 10px 30px rgba(15, 23, 42, 0.4);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
@@ -66,6 +67,80 @@ frappe.provide("telephony.sip");
 [data-theme="dark"] #telephony-sip-softphone .tp-softphone-toggle {
   background: var(--surface-gray-3, #343434);
   color: var(--ink-gray-9, #f8f8f8);
+}
+#telephony-sip-softphone .tp-softphone-toggle-main,
+#telephony-sip-softphone .tp-softphone-toggle-inline-btn {
+  border: none;
+  background: transparent;
+  color: inherit;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
+}
+#telephony-sip-softphone .tp-softphone-toggle-main {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+}
+#telephony-sip-softphone .tp-softphone-toggle-inline-controls {
+  display: none;
+  align-items: center;
+  gap: 4px;
+  margin-left: 6px;
+}
+#telephony-sip-softphone .tp-softphone-toggle-inline-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  font-size: 16px;
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+#telephony-sip-softphone .tp-softphone-toggle.tp-softphone-toggle-active {
+  width: auto;
+  height: 48px;
+  padding: 0 12px;
+  border-radius: 999px;
+  justify-content: flex-start;
+  gap: 8px;
+}
+#telephony-sip-softphone .tp-softphone-toggle.tp-softphone-toggle-active .tp-softphone-toggle-inline-controls {
+  display: inline-flex;
+}
+#telephony-sip-softphone .tp-softphone-toggle-icon {
+  display: block;
+  line-height: 1;
+}
+#telephony-sip-softphone .tp-softphone-toggle-timer {
+  display: none;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  font-weight: 600;
+  color: #ffffff;
+}
+#telephony-sip-softphone .tp-softphone-toggle.tp-softphone-toggle-active .tp-softphone-toggle-timer {
+  display: inline-block;
+}
+#telephony-sip-softphone .tp-softphone-inline-icon {
+  width: 20px;
+  height: 20px;
+  display: inline-block;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+}
+#telephony-sip-softphone .tp-softphone-inline-mic {
+  background-image: url("/assets/telephony/softphone_media/mic_on.svg");
+}
+#telephony-sip-softphone.tp-softphone-muted .tp-softphone-inline-mic {
+  background-image: url("/assets/telephony/softphone_media/mic_off.svg");
+}
+#telephony-sip-softphone .tp-softphone-inline-hangup {
+  background-image: url("/assets/telephony/softphone_media/hangup_icon.svg");
 }
 #telephony-sip-softphone .tp-softphone-panel {
   position: absolute;
@@ -170,35 +245,86 @@ frappe.provide("telephony.sip");
   min-width: 68px; /* fits mm:ss and hh:mm:ss */
   visibility: hidden;
 }
+#telephony-sip-softphone .tp-softphone-btn-icon {
+  width: 44px;
+  height: 44px;
+  display: inline-block;
+  margin-right: 6px;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 80%;
+}
+#telephony-sip-softphone .tp-softphone-btn-label {
+  display: inline-block;
+}
+#telephony-sip-softphone .tp-softphone-answer-icon {
+  background-image: url("/assets/telephony/softphone_media/call_answer_icon.svg");
+}
+#telephony-sip-softphone .tp-softphone-end-icon {
+  background-image: url("/assets/telephony/softphone_media/hangup_icon.svg");
+}
+#telephony-sip-softphone .tp-softphone-mute-icon {
+  background-image: url("/assets/telephony/softphone_media/mic_on.svg");
+}
+#telephony-sip-softphone.tp-softphone-muted .tp-softphone-mute-icon {
+  background-image: url("/assets/telephony/softphone_media/mic_off.svg");
+}
+#telephony-sip-softphone .tp-softphone-dialpad-icon {
+  width: 44px;
+  height: 44px;
+  background-image: url("/assets/telephony/softphone_media/dialpad_icon_off.svg");
+  background-size: 80%;
+}
+#telephony-sip-softphone.tp-softphone-keypad-visible .tp-softphone-dialpad-icon {
+  background-image: url("/assets/telephony/softphone_media/dialpad_icon_on.svg");
+}
+#telephony-sip-softphone .tp-softphone-input-wrap {
+  position: relative;
+}
 #telephony-sip-softphone .tp-softphone-dial-input {
   width: 100%;
   border-radius: 12px;
   border: 1px solid var(--tp-border-subtle);
   background: var(--tp-surface-muted);
   color: var(--tp-text);
-  padding: 8px 10px;
+  padding: 8px 32px 8px 10px;
   font-size: 15px;
   outline: none;
+}
+#telephony-sip-softphone .tp-softphone-input-clear {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: transparent;
+  color: var(--tp-muted);
+  cursor: pointer;
+  padding: 0;
+  font-size: 16px;
+  display: none;
 }
 #telephony-sip-softphone .tp-softphone-actions {
   padding: 0 0 8px;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 8px;
 }
 #telephony-sip-softphone .tp-softphone-btn {
-  border-radius: 12px;
   border: none;
-  padding: 8px 4px;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
+}
+#telephony-sip-softphone .tp-softphone-btn:not(.tp-softphone-icon-only) {
+  border-radius: 12px;
+  padding: 8px 4px;
 }
 #telephony-sip-softphone .tp-softphone-btn.primary {
   background: var(--tp-primary);
   color: #fff;
 }
-[data-theme="dark"] #telephony-sip-softphone .tp-softphone-btn.primary:not(:disabled) {
+[data-theme="dark"] #telephony-sip-softphone .tp-softphone-btn.primary:not(:disabled):not(.tp-softphone-icon-only) {
   background: var(--surface-gray-3, #343434);
   color: var(--ink-gray-9, #f8f8f8);
 }
@@ -214,32 +340,87 @@ frappe.provide("telephony.sip");
   background: var(--tp-secondary);
   color: #e2e8f0;
 }
-#telephony-sip-softphone .tp-softphone-btn:disabled {
+#telephony-sip-softphone .tp-softphone-btn:disabled:not(.tp-softphone-icon-only) {
   opacity: 1;
   background: var(--tp-disabled-bg);
   color: var(--tp-muted);
   cursor: not-allowed;
 }
+#telephony-sip-softphone .tp-softphone-btn.tp-softphone-icon-only {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+  justify-self: center;
+}
+#telephony-sip-softphone .tp-softphone-btn.tp-softphone-icon-only .tp-softphone-btn-icon {
+  margin-right: 0;
+}
+#telephony-sip-softphone .tp-softphone-btn.tp-softphone-icon-only .tp-softphone-btn-label {
+  display: none;
+}
+#telephony-sip-softphone .tp-softphone-btn.tp-softphone-icon-only:disabled {
+  background: transparent;
+}
 #telephony-sip-softphone .tp-softphone-btn.tp-softphone-highlight {
-  box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.4);
+  /* When a call is ringing, animate the answer icon instead of
+     drawing an outline box. */
+}
+#telephony-sip-softphone .tp-softphone-btn.tp-softphone-highlight .tp-softphone-btn-icon {
+  animation: tp-softphone-answer-wiggle 0.6s ease-in-out infinite;
+  transform-origin: 50% 50%;
+}
+@keyframes tp-softphone-answer-wiggle {
+  0% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-10deg);
+  }
+  50% {
+    transform: rotate(10deg);
+  }
+  75% {
+    transform: rotate(-10deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
 }
 #telephony-sip-softphone .tp-softphone-resume {
   display: none;
-  margin: 2px 0 10px;
-  width: 100%;
-  border-radius: 10px;
-  border: 1px solid rgba(251, 191, 36, 0.5);
-  background: rgba(251, 191, 36, 0.06);
-  color: #fbbf24;
-  padding: 6px 8px;
-  font-size: 13px;
-  font-weight: 600;
+  margin: 4px 0 10px;
+  width: 60px;
+  height: 60px;
+  padding: 0;
+  border-radius: 999px;
+  border: none;
+  background: transparent;
   cursor: pointer;
+  justify-self: center;
+  align-items: center;
+  justify-content: center;
+}
+#telephony-sip-softphone .tp-softphone-resume-icon {
+  width: 44px;
+  height: 44px;
+  display: inline-block;
+  background-image: url("/assets/telephony/softphone_media/resume_audio.svg");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 80%;
 }
 #telephony-sip-softphone .tp-softphone-keypad {
-  display: grid;
+  display: none;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 4px;
+}
+#telephony-sip-softphone.tp-softphone-keypad-visible .tp-softphone-keypad {
+  display: grid;
 }
 #telephony-sip-softphone .tp-softphone-keypad button {
   border-radius: 12px;
@@ -369,6 +550,7 @@ frappe.provide("telephony.sip");
       this.panel = null;
       this.statusEl = null;
       this.dialInput = null;
+      this.clearBtn = null;
       this.button = null;
       this.remoteAudio = null;
       this.resumeBtn = null;
@@ -390,12 +572,22 @@ frappe.provide("telephony.sip");
       this.keepRemoteStreamAttached = isSafari;
       this.layoutPrefs = this._loadLayoutPrefs();
       this.dragging = false;
+      this.dragMoved = false;
+      this.dragStart = null;
       this.boundDragMove = this._onDragMove.bind(this);
       this.boundDragEnd = this._endDrag.bind(this);
       this.boundResizeHandler = this._handleViewportResize.bind(this);
       this.keypadSounds = null;
       this.ringtone = null;
       this.ringback = null;
+    }
+
+    _toggleKeypad() {
+      if (!this.root || !this.keypadToggleBtn) return;
+      const visible = this.root.classList.toggle("tp-softphone-keypad-visible");
+      this.keypadToggleBtn.setAttribute("aria-label", visible ? "Hide keypad" : "Show keypad");
+      this.keypadToggleBtn.setAttribute("title", visible ? "Hide keypad" : "Show keypad");
+      this._setPanelSizeFromViewport();
     }
 
     async init() {
@@ -554,6 +746,11 @@ frappe.provide("telephony.sip");
       this._ensureAbsolutePosition();
       if (!this.root || event.button === 2) return;
       this.dragging = true;
+      this.dragMoved = false;
+      this.dragStart = {
+        x: event.clientX,
+        y: event.clientY,
+      };
       const rect = this.root.getBoundingClientRect();
       this.dragOffset = {
         x: event.clientX - rect.left,
@@ -566,6 +763,13 @@ frappe.provide("telephony.sip");
 
     _onDragMove(event) {
       if (!this.dragging || !this.root) return;
+      if (this.dragStart) {
+        const dx = event.clientX - this.dragStart.x;
+        const dy = event.clientY - this.dragStart.y;
+        if (!this.dragMoved && (Math.abs(dx) > 3 || Math.abs(dy) > 3)) {
+          this.dragMoved = true;
+        }
+      }
       const width = this.root.offsetWidth;
       const height = this.root.offsetHeight;
       const maxX = window.innerWidth - width;
@@ -607,19 +811,31 @@ frappe.provide("telephony.sip");
 
       const keypadDigits = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "*", "0", "#"];
       const placeholder = typeof __ === "function" ? __("Enter number") : "Enter number";
-      const keypadHtml =
-        keypadDigits
-          .map((d) => `<button type="button" data-digit="${d}">${d}</button>`)
-          .join("") + `<button type="button" data-action="backspace">⌫</button>`;
+      const keypadHtml = keypadDigits
+        .map((d) => `<button type="button" data-digit="${d}">${d}</button>`)
+        .join("");
 
       this.root = document.createElement("div");
       this.root.id = SOFTPHONE_ID;
       this.root.innerHTML = `
-        <button type="button" class="tp-softphone-toggle" aria-expanded="false" aria-label="Desk softphone">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
-            <path fill-rule="evenodd" d="M1.885.511a1.745 1.745 0 0 1 2.61.163L6.29 2.98c.329.423.445.974.315 1.494l-.547 2.19a.68.68 0 0 0 .178.643l2.457 2.457a.68.68 0 0 0 .644.178l2.189-.547a1.75 1.75 0 0 1 1.494.315l2.306 1.794c.829.645.905 1.87.163 2.611l-1.034 1.034c-.74.74-1.846 1.065-2.877.702a18.6 18.6 0 0 1-7.01-4.42 18.6 18.6 0 0 1-4.42-7.009c-.362-1.03-.037-2.137.703-2.877z"/>
-          </svg>
-        </button>
+        <div class="tp-softphone-toggle">
+          <button type="button" class="tp-softphone-toggle-main" aria-expanded="false" aria-label="Desk softphone">
+            <span class="tp-softphone-toggle-icon" aria-hidden="true">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                <path fill-rule="evenodd" d="M1.885.511a1.745 1.745 0 0 1 2.61.163L6.29 2.98c.329.423.445.974.315 1.494l-.547 2.19a.68.68 0 0 0 .178.643l2.457 2.457a.68.68 0 0 0 .644.178l2.189-.547a1.75 1.75 0 0 1 1.494.315l2.306 1.794c.829.645.905 1.87.163 2.611l-1.034 1.034c-.74.74-1.846 1.065-2.877.702a18.6 18.6 0 0 1-7.01-4.42 18.6 18.6 0 0 1-4.42-7.009c-.362-1.03-.037-2.137.703-2.877z"/>
+              </svg>
+            </span>
+          </button>
+          <span class="tp-softphone-toggle-timer" aria-hidden="true"></span>
+          <div class="tp-softphone-toggle-inline-controls">
+            <button type="button" class="tp-softphone-toggle-inline-btn tp-softphone-mute" aria-label="Mute call">
+              <span class="tp-softphone-inline-icon tp-softphone-inline-mic"></span>
+            </button>
+            <button type="button" class="tp-softphone-toggle-inline-btn tp-softphone-hangup" aria-label="End call">
+              <span class="tp-softphone-inline-icon tp-softphone-inline-hangup"></span>
+            </button>
+          </div>
+        </div>
         <div class="tp-softphone-panel" aria-hidden="true">
           <div class="tp-softphone-content">
             <div class="tp-softphone-inner">
@@ -634,15 +850,35 @@ frappe.provide("telephony.sip");
                 <div class="tp-softphone-remote-label">Remote</div>
                 <div class="tp-softphone-remote-value">Ready</div>
                 <div class="tp-softphone-timer" aria-hidden="true"></div>
-                <input type="text" class="tp-softphone-dial-input" placeholder="${placeholder}" />
+                <div class="tp-softphone-input-wrap">
+                  <input type="text" class="tp-softphone-dial-input" placeholder="${placeholder}" />
+                  <button type="button" class="tp-softphone-input-clear" data-action="backspace" aria-label="Backspace" title="Backspace">⌫</button>
+                </div>
               </div>
               <div class="tp-softphone-actions">
-                <button type="button" class="tp-softphone-btn primary" data-action="call">Call</button>
-                <button type="button" class="tp-softphone-btn success" data-action="answer">Answer</button>
-                <button type="button" class="tp-softphone-btn danger" data-action="end">End</button>
-                <button type="button" class="tp-softphone-btn secondary" data-action="mute">Mute</button>
+                <button type="button" class="tp-softphone-btn primary tp-softphone-icon-only" data-action="call" aria-label="Call" title="Call">
+                  <span class="tp-softphone-btn-icon tp-softphone-answer-icon" aria-hidden="true"></span>
+                  <span class="tp-softphone-btn-label">Call</span>
+                </button>
+                <button type="button" class="tp-softphone-btn success tp-softphone-icon-only" data-action="answer" aria-label="Answer" title="Answer">
+                  <span class="tp-softphone-btn-icon tp-softphone-answer-icon" aria-hidden="true"></span>
+                  <span class="tp-softphone-btn-label">Answer</span>
+                </button>
+                <button type="button" class="tp-softphone-btn danger tp-softphone-icon-only" data-action="end" aria-label="End call" title="End call">
+                  <span class="tp-softphone-btn-icon tp-softphone-end-icon" aria-hidden="true"></span>
+                  <span class="tp-softphone-btn-label">End</span>
+                </button>
+                <button type="button" class="tp-softphone-btn secondary tp-softphone-icon-only" data-action="mute" aria-label="Mute" title="Mute">
+                  <span class="tp-softphone-btn-icon tp-softphone-mute-icon" aria-hidden="true"></span>
+                  <span class="tp-softphone-btn-label">Mute</span>
+                </button>
+                <button type="button" class="tp-softphone-btn secondary tp-softphone-icon-only" data-action="toggle-keypad" aria-label="Show keypad" title="Show keypad">
+                  <span class="tp-softphone-inline-icon tp-softphone-dialpad-icon" aria-hidden="true"></span>
+                </button>
+                <button type="button" class="tp-softphone-resume" aria-label="Resume audio" title="Resume audio">
+                  <span class="tp-softphone-inline-icon tp-softphone-resume-icon" aria-hidden="true"></span>
+                </button>
               </div>
-              <button type="button" class="tp-softphone-resume">Resume audio</button>
               <div class="tp-softphone-keypad">
                 ${keypadHtml}
               </div>
@@ -654,22 +890,35 @@ frappe.provide("telephony.sip");
       document.body.appendChild(this.root);
 
       this.button = this.root.querySelector(".tp-softphone-toggle");
+      this.toggleMain = this.root.querySelector(".tp-softphone-toggle-main");
+      this.buttonTimerEl = this.root.querySelector(".tp-softphone-toggle-timer");
+      this.inlineMuteBtn = this.root.querySelector(".tp-softphone-toggle-inline-btn.tp-softphone-mute");
+      this.inlineEndBtn = this.root.querySelector(".tp-softphone-toggle-inline-btn.tp-softphone-hangup");
       this.panel = this.root.querySelector(".tp-softphone-panel");
       this.panelContent = this.root.querySelector(".tp-softphone-content");
       this.statusEl = this.root.querySelector(".tp-softphone-status-text");
       this.resumeBtn = this.root.querySelector(".tp-softphone-resume");
       this.dialInput = this.root.querySelector(".tp-softphone-dial-input");
+      this.clearBtn = this.root.querySelector(".tp-softphone-input-clear");
       this.remoteInfoEl = this.root.querySelector(".tp-softphone-remote-value");
       this.timerEl = this.root.querySelector(".tp-softphone-timer");
+      this.actionsRow = this.root.querySelector(".tp-softphone-actions");
       this.callBtn = this.root.querySelector('[data-action="call"]');
       this.answerBtn = this.root.querySelector('[data-action="answer"]');
       this.endBtn = this.root.querySelector('[data-action="end"]');
       this.muteBtn = this.root.querySelector('[data-action="mute"]');
+      this.keypadToggleBtn = this.root.querySelector("[data-action='toggle-keypad']");
 
-      this.button.onclick = () => {
-        this._unlockAudio();
-        this._togglePanel();
-      };
+      if (this.toggleMain) {
+        this.toggleMain.onclick = () => {
+          if (this.dragMoved) {
+            this.dragMoved = false;
+            return;
+          }
+          this._unlockAudio();
+          this._togglePanel();
+        };
+      }
       const closeBtn = this.root.querySelector(".tp-softphone-close");
       if (closeBtn) closeBtn.onclick = () => this._togglePanel(false);
       if (this.callBtn) {
@@ -702,6 +951,27 @@ frappe.provide("telephony.sip");
           this._resumeAudio();
         };
       }
+      if (this.inlineMuteBtn) {
+        this.inlineMuteBtn.onclick = (e) => {
+          e.stopPropagation();
+          this._unlockAudio();
+          if (this.muteBtn) {
+            this._toggleMute(this.muteBtn);
+          }
+        };
+      }
+      if (this.inlineEndBtn) {
+        this.inlineEndBtn.onclick = (e) => {
+          e.stopPropagation();
+          this._unlockAudio();
+          this._hangup();
+        };
+      }
+      if (this.keypadToggleBtn) {
+        this.keypadToggleBtn.onclick = () => {
+          this._toggleKeypad();
+        };
+      }
       this.root.querySelectorAll("[data-digit]").forEach((btn) => {
         btn.addEventListener("click", () => {
           this._unlockAudio();
@@ -717,6 +987,9 @@ frappe.provide("telephony.sip");
       }
       if (this.dialInput) {
         this.dialInput.addEventListener("focus", () => this._unlockAudio());
+        this.dialInput.addEventListener("input", () =>
+          this._updateClearButtonVisibility()
+        );
       }
 
       this._applyLayoutPrefs();
@@ -742,6 +1015,7 @@ frappe.provide("telephony.sip");
         // when opening, ensure the full widget (panel + button) stays in view
         this._clampToViewport();
       }
+      this._updateToggleLayoutForCall();
     }
 
     _updateStatus(text, detail) {
@@ -793,7 +1067,6 @@ frappe.provide("telephony.sip");
       }
       if (this.muteBtn) {
         this.muteBtn.disabled = !active;
-        this.muteBtn.textContent = this.isMuted ? "Unmute" : "Mute";
         setVisibility(this.muteBtn, showMute);
       }
       if (this.answerBtn) {
@@ -803,24 +1076,30 @@ frappe.provide("telephony.sip");
         setVisibility(this.answerBtn, showAnswer);
       }
 
-      // Per-row full-width logic: if exactly one button in the
-      // top row (Call/Answer) or bottom row (End/Mute) is visible,
-      // let it span the full width of that row.
-      const setRowFullWidth = (buttons) => {
-        const visible = buttons.filter(
-          (el) => el && el.style.display !== "none"
-        );
-        if (visible.length === 1) {
-          visible[0].style.gridColumn = "1 / -1";
-        }
-      };
-
-      setRowFullWidth([this.callBtn, this.answerBtn]);
-      setRowFullWidth([this.endBtn, this.muteBtn]);
-
       if (this.resumeBtn) {
         const shouldShow = active && (this.remoteAudio?.paused || this.status === "in call");
-        this.resumeBtn.style.display = shouldShow ? "block" : "none";
+        this.resumeBtn.style.display = shouldShow ? "flex" : "none";
+      }
+
+      if (this.root) {
+        this.root.classList.toggle("tp-softphone-muted", !!this.isMuted);
+      }
+
+      // Adjust actions row column count to match number of visible buttons
+      if (this.actionsRow) {
+        const allButtons = [
+          this.callBtn,
+          this.answerBtn,
+          this.endBtn,
+          this.muteBtn,
+          this.keypadToggleBtn,
+          this.resumeBtn,
+        ];
+        const visibleButtons = allButtons.filter(
+          (btn) => btn && btn.style.display !== "none"
+        );
+        const count = visibleButtons.length || 1;
+        this.actionsRow.style.gridTemplateColumns = `repeat(${count}, minmax(0, 1fr))`;
       }
     }
 
@@ -834,15 +1113,28 @@ frappe.provide("telephony.sip");
       }
       const update = () => {
         if (!this.currentCallStartTs) {
-          this.timerEl.textContent = "";
+          if (this.timerEl) this.timerEl.textContent = "";
+          if (this.buttonTimerEl) this.buttonTimerEl.textContent = "";
           return;
         }
         const elapsedSeconds = (Date.now() - this.currentCallStartTs) / 1000;
-        this.timerEl.textContent = formatDurationHms(elapsedSeconds);
+        const label = formatDurationHms(elapsedSeconds);
+        if (this.timerEl) {
+          this.timerEl.textContent = label;
+        }
+        if (this.buttonTimerEl) {
+          this.buttonTimerEl.textContent = label;
+          this.buttonTimerEl.style.display = "";
+        }
       };
       update();
       this.callTimerId = window.setInterval(update, 1000);
-      this.timerEl.style.visibility = "visible";
+      if (this.timerEl) {
+        this.timerEl.style.visibility = "visible";
+      }
+      if (this.button) {
+        this._updateToggleLayoutForCall();
+      }
     }
 
     _stopCallTimer() {
@@ -854,12 +1146,30 @@ frappe.provide("telephony.sip");
         this.timerEl.textContent = "";
         this.timerEl.style.visibility = "hidden";
       }
+      if (this.buttonTimerEl) {
+        this.buttonTimerEl.textContent = "";
+      }
+      this._updateToggleLayoutForCall();
+    }
+
+    _updateToggleLayoutForCall() {
+      if (!this.button) return;
+      const hasTimer = !!this.callTimerId;
+      const panelOpen = !!(this.panel && this.panel.classList.contains("tp-open"));
+      const shouldIsland = hasTimer && !panelOpen;
+      this.button.classList.toggle("tp-softphone-toggle-active", shouldIsland);
     }
 
     _setRemoteInfo(text) {
       if (this.remoteInfoEl) {
         this.remoteInfoEl.textContent = text || "Ready";
       }
+    }
+
+    _updateClearButtonVisibility() {
+      if (!this.clearBtn || !this.dialInput) return;
+      const hasValue = !!(this.dialInput.value && this.dialInput.value.length);
+      this.clearBtn.style.display = hasValue ? "inline-flex" : "none";
     }
 
     async _setupSip() {
@@ -1075,6 +1385,7 @@ frappe.provide("telephony.sip");
           if (this.dialInput) {
             this.dialInput.value = remoteUser;
           }
+          this._updateClearButtonVisibility();
         }
         this._startRingtone();
       } else {
@@ -1082,6 +1393,7 @@ frappe.provide("telephony.sip");
         if (this.dialInput && !this.dialInput.value && session.request?.uri?.user) {
           this.dialInput.value = session.request.uri.user;
         }
+        this._updateClearButtonVisibility();
         const target = this.dialInput?.value || this._identityUser(this._remoteIdentity(session));
         if (target) {
           this._setRemoteInfo(target);
@@ -1163,19 +1475,26 @@ frappe.provide("telephony.sip");
 
     _setPanelSizeFromViewport() {
       if (!this.panel || !this.panelContent) return;
-      const maxHeight = window.innerHeight * VIEWPORT_HEIGHT_RATIO || BASE_PANEL_HEIGHT;
+      const keypadVisible =
+        this.root?.classList?.contains("tp-softphone-keypad-visible");
+      const visibleBaseHeight = keypadVisible
+        ? BASE_PANEL_HEIGHT
+        : COMPACT_PANEL_HEIGHT;
+      const scaleBaseHeight = BASE_PANEL_HEIGHT;
+      const maxHeight =
+        window.innerHeight * VIEWPORT_HEIGHT_RATIO || scaleBaseHeight;
       const baseMargin = 20; // base margin around the scaled content
       // Compute a single uniform scale factor so that
       // scaledHeight + 2*(baseMargin*scale) fits within maxHeight.
-      let scale = maxHeight / (BASE_PANEL_HEIGHT + baseMargin * 2);
+      let scale = maxHeight / (scaleBaseHeight + baseMargin * 2);
       // Clamp to sensible min/max so the widget never becomes too tiny or huge.
       scale = Math.min(MAX_PANEL_SCALE, Math.max(MIN_PANEL_SCALE, scale));
 
       const scaledWidth = BASE_PANEL_WIDTH * scale;
-      const scaledHeight = BASE_PANEL_HEIGHT * scale;
+      const scaledVisibleHeight = visibleBaseHeight * scale;
       const margin = baseMargin * scale;
       const panelWidth = scaledWidth + margin * 2;
-      const panelHeight = scaledHeight + margin * 2;
+      const panelHeight = scaledVisibleHeight + margin * 2;
 
       this.panel.style.width = `${panelWidth}px`;
       this.panel.style.height = `${panelHeight}px`;
@@ -1183,7 +1502,7 @@ frappe.provide("telephony.sip");
       this.panel.style.maxHeight = `${panelHeight}px`;
 
       this.panelContent.style.width = `${BASE_PANEL_WIDTH}px`;
-      this.panelContent.style.height = `${BASE_PANEL_HEIGHT}px`;
+      this.panelContent.style.height = `${visibleBaseHeight}px`;
       this.panelContent.style.transformOrigin = "center center";
       this.panelContent.style.transform = `scale(${scale})`;
     }
@@ -1437,11 +1756,13 @@ frappe.provide("telephony.sip");
     _appendDigit(digit) {
       if (!this.dialInput) return;
       this.dialInput.value = (this.dialInput.value || "") + digit;
+      this._updateClearButtonVisibility();
     }
 
     _backspace() {
       if (!this.dialInput) return;
       this.dialInput.value = this.dialInput.value.slice(0, -1);
+      this._updateClearButtonVisibility();
     }
 
     _handleDigit(digit) {
