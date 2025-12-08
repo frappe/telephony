@@ -9,6 +9,7 @@ frappe.provide("telephony.sip");
   const BASE_PANEL_WIDTH = 320;
   const BASE_PANEL_HEIGHT = 568;
   const COMPACT_PANEL_HEIGHT = 240;
+  const ACTION_ROW_EXTRA_HEIGHT = 60;
   const VIEWPORT_HEIGHT_RATIO = 0.5;
   const MIN_PANEL_SCALE = 0.4;
   const MAX_PANEL_SCALE = 1;
@@ -274,6 +275,30 @@ frappe.provide("telephony.sip");
 }
 #telephony-sip-softphone.tp-softphone-held .tp-softphone-hold-icon {
   background-image: url("/assets/telephony/softphone_media/hold_on.svg");
+}
+#telephony-sip-softphone .tp-softphone-transfer-icon {
+  background-image: url("/assets/telephony/softphone_media/transfer_off.svg");
+}
+#telephony-sip-softphone.tp-softphone-transferring .tp-softphone-transfer-icon {
+  background-image: url("/assets/telephony/softphone_media/transfer_on.svg");
+}
+#telephony-sip-softphone .tp-softphone-attended-icon {
+  background-image: url("/assets/telephony/softphone_media/attended_transfer_off.svg");
+}
+#telephony-sip-softphone.tp-softphone-attended .tp-softphone-attended-icon {
+  background-image: url("/assets/telephony/softphone_media/attended_transfer_on.svg");
+}
+#telephony-sip-softphone .tp-softphone-transfer-back-icon {
+  background-image: url("/assets/telephony/softphone_media/back_button.svg");
+}
+#telephony-sip-softphone .tp-softphone-swap-icon {
+  background-image: url("/assets/telephony/softphone_media/swap_calls.svg");
+}
+#telephony-sip-softphone .tp-softphone-attended-icon {
+  background-image: url("/assets/telephony/softphone_media/attended_transfer_off.svg");
+}
+#telephony-sip-softphone.tp-softphone-attended .tp-softphone-attended-icon {
+  background-image: url("/assets/telephony/softphone_media/attended_transfer_on.svg");
 }
 #telephony-sip-softphone .tp-softphone-dialpad-icon {
   width: 44px;
@@ -570,6 +595,13 @@ frappe.provide("telephony.sip");
       this.isRegistered = false;
       this.isMuted = false;
       this.isOnHold = false;
+      this.transferPending = false;
+      this.attendedState = "idle";
+      this.primarySession = null;
+      this.consultSession = null;
+      this.attendedTargetUri = null;
+      this.transferAutoHeld = false;
+      this.attendedWasHeld = false;
       this.preferredMicId = null;
       this.iceCheckingTimeout = 1000;
       this.audioUnlocked = false;
@@ -587,6 +619,7 @@ frappe.provide("telephony.sip");
       this.keypadSounds = null;
       this.ringtone = null;
       this.ringback = null;
+      this.swapBtn = null;
     }
 
     _toggleKeypad() {
@@ -595,6 +628,16 @@ frappe.provide("telephony.sip");
       this.keypadToggleBtn.setAttribute("aria-label", visible ? "Hide keypad" : "Show keypad");
       this.keypadToggleBtn.setAttribute("title", visible ? "Hide keypad" : "Show keypad");
       this._setPanelSizeFromViewport();
+    }
+
+    _ensureKeypadVisible() {
+      if (!this.root || !this.keypadToggleBtn) return;
+      if (!this.root.classList.contains("tp-softphone-keypad-visible")) {
+        this.root.classList.add("tp-softphone-keypad-visible");
+        this.keypadToggleBtn.setAttribute("aria-label", "Hide keypad");
+        this.keypadToggleBtn.setAttribute("title", "Hide keypad");
+        this._setPanelSizeFromViewport();
+      }
     }
 
     async init() {
@@ -883,6 +926,22 @@ frappe.provide("telephony.sip");
                   <span class="tp-softphone-btn-icon tp-softphone-hold-icon" aria-hidden="true"></span>
                   <span class="tp-softphone-btn-label">Hold</span>
                 </button>
+                <button type="button" class="tp-softphone-btn secondary tp-softphone-icon-only" data-action="transfer" aria-label="Transfer" title="Transfer">
+                  <span class="tp-softphone-btn-icon tp-softphone-transfer-icon" aria-hidden="true"></span>
+                  <span class="tp-softphone-btn-label">Transfer</span>
+                </button>
+                <button type="button" class="tp-softphone-btn secondary tp-softphone-icon-only" data-action="attended-transfer" aria-label="Attended transfer" title="Attended transfer">
+                  <span class="tp-softphone-btn-icon tp-softphone-attended-icon" aria-hidden="true"></span>
+                  <span class="tp-softphone-btn-label">Attended</span>
+                </button>
+                <button type="button" class="tp-softphone-btn secondary tp-softphone-icon-only" data-action="attended-swap" aria-label="Swap calls" title="Swap calls">
+                  <span class="tp-softphone-btn-icon tp-softphone-swap-icon" aria-hidden="true"></span>
+                  <span class="tp-softphone-btn-label">Swap</span>
+                </button>
+                <button type="button" class="tp-softphone-btn secondary tp-softphone-icon-only" data-action="cancel-transfer" aria-label="Cancel transfer" title="Cancel transfer">
+                  <span class="tp-softphone-btn-icon tp-softphone-transfer-back-icon" aria-hidden="true"></span>
+                  <span class="tp-softphone-btn-label">Back</span>
+                </button>
                 <button type="button" class="tp-softphone-btn secondary tp-softphone-icon-only" data-action="toggle-keypad" aria-label="Show keypad" title="Show keypad">
                   <span class="tp-softphone-inline-icon tp-softphone-dialpad-icon" aria-hidden="true"></span>
                 </button>
@@ -919,6 +978,16 @@ frappe.provide("telephony.sip");
       this.endBtn = this.root.querySelector('[data-action="end"]');
       this.muteBtn = this.root.querySelector('[data-action="mute"]');
       this.holdBtn = this.root.querySelector('[data-action="hold"]');
+      this.transferBtn = this.root.querySelector('[data-action="transfer"]');
+      this.attendedBtn = this.root.querySelector(
+        '[data-action="attended-transfer"]'
+      );
+      this.swapBtn = this.root.querySelector(
+        '[data-action="attended-swap"]'
+      );
+      this.cancelTransferBtn = this.root.querySelector(
+        '[data-action="cancel-transfer"]'
+      );
       this.keypadToggleBtn = this.root.querySelector("[data-action='toggle-keypad']");
 
       if (this.toggleMain) {
@@ -961,6 +1030,30 @@ frappe.provide("telephony.sip");
         this.holdBtn.onclick = () => {
           this._unlockAudio();
           this._toggleHold();
+        };
+      }
+      if (this.transferBtn) {
+        this.transferBtn.onclick = () => {
+          this._unlockAudio();
+          this._transfer();
+        };
+      }
+      if (this.attendedBtn) {
+        this.attendedBtn.onclick = () => {
+          this._unlockAudio();
+          this._toggleAttendedTransfer();
+        };
+      }
+      if (this.swapBtn) {
+        this.swapBtn.onclick = () => {
+          this._unlockAudio();
+          this._swapAttendedLegs();
+        };
+      }
+      if (this.cancelTransferBtn) {
+        this.cancelTransferBtn.onclick = () => {
+          this._unlockAudio();
+          this._cancelAnyTransfer();
         };
       }
       if (this.resumeBtn) {
@@ -1054,17 +1147,36 @@ frappe.provide("telephony.sip");
         !!this.session?.__established || status === "in call";
 
       const isIncoming = direction === "incoming";
+      const inAttendedPreparing = this.attendedState === "preparing";
 
       const showCall =
-        !active &&
-        !isIncoming &&
-        status !== "incoming" &&
-        status !== "dialing" &&
-        status !== "ringing";
+        (!active &&
+          !isIncoming &&
+          status !== "incoming" &&
+          status !== "dialing" &&
+          status !== "ringing") ||
+        inAttendedPreparing;
       const showAnswer = isIncoming && (status === "incoming" || status === "ringing");
       const showEnd = active || status === "incoming" || status === "dialing" || status === "ringing";
       const showMute = active;
+      const consultActive =
+        this.consultSession && this._sessionActive(this.consultSession);
+      const inBlindTransfer = !!this.transferPending;
+      const inAttendedTransfer =
+        this.attendedState === "preparing" ||
+        this.attendedState === "consulting" ||
+        consultActive;
       const showHold = established;
+      const showTransfer = established && !inAttendedTransfer;
+      const showAttended = established && !inBlindTransfer;
+      const canSwapAttended =
+        this.attendedState === "consulting" &&
+        this.primarySession &&
+        this.consultSession &&
+        this._sessionActive(this.primarySession) &&
+        this._sessionActive(this.consultSession);
+      const showSwap = canSwapAttended;
+      const showCancelTransfer = inBlindTransfer || inAttendedTransfer;
 
       const setVisibility = (el, visible) => {
         if (!el) return;
@@ -1077,9 +1189,14 @@ frappe.provide("telephony.sip");
       if (this.endBtn) this.endBtn.style.gridColumn = "";
       if (this.muteBtn) this.muteBtn.style.gridColumn = "";
       if (this.holdBtn) this.holdBtn.style.gridColumn = "";
+      if (this.transferBtn) this.transferBtn.style.gridColumn = "";
+      if (this.attendedBtn) this.attendedBtn.style.gridColumn = "";
+      if (this.cancelTransferBtn) this.cancelTransferBtn.style.gridColumn = "";
+      if (this.swapBtn) this.swapBtn.style.gridColumn = "";
 
       if (this.callBtn) {
-        this.callBtn.disabled = active;
+        const canCall = !active || inAttendedPreparing;
+        this.callBtn.disabled = !canCall;
         setVisibility(this.callBtn, showCall);
       }
       if (this.endBtn) {
@@ -1099,6 +1216,45 @@ frappe.provide("telephony.sip");
         this.holdBtn.setAttribute("aria-label", holdLabel);
         this.holdBtn.setAttribute("title", holdLabel);
       }
+      if (this.transferBtn) {
+        const canTransfer = established;
+        this.transferBtn.disabled = !canTransfer;
+        setVisibility(this.transferBtn, showTransfer);
+        const transferLabel = this.transferPending
+          ? __("Complete transfer")
+          : __("Transfer");
+        this.transferBtn.setAttribute("aria-label", transferLabel);
+        this.transferBtn.setAttribute("title", transferLabel);
+      }
+      if (this.attendedBtn) {
+        const canAttended = established;
+        this.attendedBtn.disabled = !canAttended;
+        setVisibility(this.attendedBtn, showAttended);
+        const attendedLabel =
+          this.attendedState === "consulting"
+            ? __("Complete attended transfer")
+            : this.attendedState === "preparing"
+              ? __("Cancel attended transfer")
+              : __("Attended transfer");
+        this.attendedBtn.setAttribute("aria-label", attendedLabel);
+        this.attendedBtn.setAttribute("title", attendedLabel);
+      }
+      if (this.swapBtn) {
+        const canSwap = showSwap;
+        this.swapBtn.disabled = !canSwap;
+        setVisibility(this.swapBtn, canSwap);
+        const swapLabel = __("Swap active call");
+        this.swapBtn.setAttribute("aria-label", swapLabel);
+        this.swapBtn.setAttribute("title", swapLabel);
+      }
+      if (this.cancelTransferBtn) {
+        const canCancel = showCancelTransfer;
+        this.cancelTransferBtn.disabled = !canCancel;
+        setVisibility(this.cancelTransferBtn, canCancel);
+        const cancelLabel = __("Cancel transfer");
+        this.cancelTransferBtn.setAttribute("aria-label", cancelLabel);
+        this.cancelTransferBtn.setAttribute("title", cancelLabel);
+      }
       if (this.answerBtn) {
         const canAnswer = isIncoming && (status === "incoming" || status === "ringing");
         this.answerBtn.disabled = !canAnswer;
@@ -1114,6 +1270,14 @@ frappe.provide("telephony.sip");
       if (this.root) {
         this.root.classList.toggle("tp-softphone-muted", !!this.isMuted);
         this.root.classList.toggle("tp-softphone-held", !!this.isOnHold);
+        this.root.classList.toggle(
+          "tp-softphone-transferring",
+          !!this.transferPending || this.status === "transferring"
+        );
+        this.root.classList.toggle(
+          "tp-softphone-attended",
+          this.attendedState === "preparing" || this.attendedState === "consulting"
+        );
       }
 
       // Adjust actions row column count to match number of visible buttons
@@ -1124,14 +1288,30 @@ frappe.provide("telephony.sip");
           this.endBtn,
           this.muteBtn,
           this.holdBtn,
+          this.transferBtn,
+          this.attendedBtn,
+          this.swapBtn,
+          this.cancelTransferBtn,
           this.keypadToggleBtn,
           this.resumeBtn,
         ];
         const visibleButtons = allButtons.filter(
           (btn) => btn && btn.style.display !== "none"
         );
-        const count = visibleButtons.length || 1;
+        let count = visibleButtons.length || 1;
+        let rows = 1;
+        // If we have more than 5 visible icons, split them across
+        // two rows so each row is reasonably balanced.
+        if (count > 5) {
+          rows = 2;
+          count = Math.ceil(count / rows);
+        }
         this.actionsRow.style.gridTemplateColumns = `repeat(${count}, minmax(0, 1fr))`;
+        this.visibleActionRows = rows;
+        // Changing the number of visible action rows affects the
+        // effective height of the compact panel, so recompute the
+        // scaled panel size whenever this changes.
+        this._setPanelSizeFromViewport();
       }
     }
 
@@ -1286,22 +1466,43 @@ frappe.provide("telephony.sip");
     }
 
     _handleSession(session) {
-      if (this.session && this.session !== session) {
-        try {
-          this.session.terminate();
-        } catch (e) {
-          // ignore
+      const isConsult = session.__role === "consult";
+
+      // For normal (primary) sessions, keep the existing behaviour of
+      // tearing down any stray previous dialog. During attended transfer
+      // we intentionally keep the primary leg while establishing the
+      // consult leg.
+      if (!isConsult) {
+        if (this.session && this.session !== session) {
+          try {
+            this.session.terminate();
+          } catch (e) {
+            // ignore
+          }
         }
+        this.session = session;
+        this.primarySession = session;
+        // reset per-call flags
+        this.isOnHold = false;
+        this.transferPending = false;
+        this.attendedState = this.attendedState === "idle" ? "idle" : this.attendedState;
+        this.consultSession = this.consultSession && this.consultSession === session ? null : this.consultSession;
+      } else {
+        // Consult call: keep the primary leg intact and treat this
+        // session as the currently focused one for the UI.
+        this.consultSession = session;
+        this.session = session;
       }
 
-      this.session = session;
-      // reset per-session flags
-      this.isOnHold = false;
       // track whether this dialog has been answered so we can decide
       // between CANCEL/reject vs BYE/terminate when hanging up.
       session.__established = false;
-      const callId = session?.request?.callId || session?.request?.call_id || randomId();
-      this.currentCallId = callId;
+      session.__held = false;
+      const callId =
+        session?.request?.callId || session?.request?.call_id || randomId();
+      if (!isConsult) {
+        this.currentCallId = callId;
+      }
       this.remoteMediaAttached = false;
       this._attachRemoteMedia(session);
       debugLog("new session", {
@@ -1317,7 +1518,9 @@ frappe.provide("telephony.sip");
           response: data?.response?.status_code,
         });
         this._updateStatus("ringing");
-        this._logCall("Ringing");
+        if (!isConsult) {
+          this._logCall("Ringing");
+        }
         this._startRingback();
       });
 
@@ -1325,11 +1528,13 @@ frappe.provide("telephony.sip");
         debugLog("session accepted", { id: callId, originator: data?.originator });
         session.__established = true;
         this._updateStatus("in call");
-        if (!this.currentCallStartTs) {
+        if (!isConsult && !this.currentCallStartTs) {
           this.currentCallStartTs = Date.now();
         }
-        this._startCallTimer();
-        this._logCall("In Progress");
+        if (!isConsult) {
+          this._startCallTimer();
+          this._logCall("In Progress");
+        }
         this._stopRingtone();
         this._stopRingback();
         // attempt remote audio playback on accept (helps Safari)
@@ -1342,10 +1547,12 @@ frappe.provide("telephony.sip");
         debugLog("session confirmed", { id: callId });
         session.__established = true;
         this._updateStatus("in call");
-        if (!this.currentCallStartTs) {
+        if (!isConsult && !this.currentCallStartTs) {
           this.currentCallStartTs = Date.now();
         }
-        this._startCallTimer();
+        if (!isConsult) {
+          this._startCallTimer();
+        }
         this._resumeAudio();
         this._stopRingtone();
         this._stopRingback();
@@ -1356,14 +1563,16 @@ frappe.provide("telephony.sip");
 
       session.on("hold", () => {
         debugLog("session hold", { id: callId });
-        this.isOnHold = true;
+        session.__held = true;
+        this.isOnHold = this.session === session;
         this._updateStatus("on hold");
         this._updateControls();
       });
 
       session.on("unhold", () => {
         debugLog("session unhold", { id: callId });
-        this.isOnHold = false;
+        session.__held = false;
+        this.isOnHold = this.session === session ? false : this.isOnHold;
         this._updateStatus("in call");
         this._updateControls();
       });
@@ -1378,7 +1587,9 @@ frappe.provide("telephony.sip");
           request: data?.request?.method,
         });
         this._updateStatus("failed");
-        this._logCall("Failed");
+        if (!isConsult) {
+          this._logCall("Failed");
+        }
         this._stopRingtone();
         this._stopRingback();
         this._detachRemoteAudio();
@@ -1405,19 +1616,26 @@ frappe.provide("telephony.sip");
           cause: data?.cause,
         });
         this._updateStatus("completed");
-        const durationSeconds =
-          this.currentCallStartTs && typeof this.currentCallStartTs === "number"
-            ? Math.max(
-                0,
-                Math.round((Date.now() - this.currentCallStartTs) / 1000)
-              )
-            : undefined;
-        this._logCall("Completed", { duration: durationSeconds });
+        if (!isConsult) {
+          const durationSeconds =
+            this.currentCallStartTs && typeof this.currentCallStartTs === "number"
+              ? Math.max(
+                  0,
+                  Math.round((Date.now() - this.currentCallStartTs) / 1000)
+                )
+              : undefined;
+          this._logCall("Completed", { duration: durationSeconds });
+        }
         this._stopRingtone();
         this._stopRingback();
         this._detachRemoteAudio();
         this._stopCallTimer();
         this.isOnHold = false;
+        this.transferPending = false;
+        this.attendedState = "idle";
+        this.primarySession = null;
+        this.consultSession = null;
+        this.attendedTargetUri = null;
         this.session = null;
         this.currentCallId = null;
         this.currentCallStartTs = null;
@@ -1431,7 +1649,9 @@ frappe.provide("telephony.sip");
       const isIncoming = this._inferDirection(session) === "incoming";
       if (isIncoming) {
         this._updateStatus("incoming");
-        this._logCall("Initiated");
+        if (!isConsult) {
+          this._logCall("Initiated");
+        }
         this._togglePanel(true);
         const remoteUser = this._identityUser(this._remoteIdentity(session));
         if (remoteUser) {
@@ -1443,7 +1663,9 @@ frappe.provide("telephony.sip");
         }
         this._startRingtone();
       } else {
-        this._logCall("Initiated");
+        if (!isConsult) {
+          this._logCall("Initiated");
+        }
         if (this.dialInput && !this.dialInput.value && session.request?.uri?.user) {
           this.dialInput.value = session.request.uri.user;
         }
@@ -1531,9 +1753,12 @@ frappe.provide("telephony.sip");
       if (!this.panel || !this.panelContent) return;
       const keypadVisible =
         this.root?.classList?.contains("tp-softphone-keypad-visible");
+      const rows = this.visibleActionRows || 1;
+      const compactBaseHeight =
+        COMPACT_PANEL_HEIGHT + (rows - 1) * ACTION_ROW_EXTRA_HEIGHT;
       const visibleBaseHeight = keypadVisible
         ? BASE_PANEL_HEIGHT
-        : COMPACT_PANEL_HEIGHT;
+        : compactBaseHeight;
       const scaleBaseHeight = BASE_PANEL_HEIGHT;
       const maxHeight =
         window.innerHeight * VIEWPORT_HEIGHT_RATIO || scaleBaseHeight;
@@ -1954,6 +2179,12 @@ frappe.provide("telephony.sip");
       this._stopCallTimer();
       this.currentCallStartTs = null;
       this.isOnHold = false;
+      this.transferPending = false;
+      this.attendedState = "idle";
+      this.primarySession = null;
+      this.consultSession = null;
+      this.attendedTargetUri = null;
+       this.transferAutoHeld = false;
       this.session = null;
       this.remoteMediaAttached = false;
       this._stopRingtone();
@@ -2003,6 +2234,22 @@ frappe.provide("telephony.sip");
         return;
       }
       const uri = sipTarget(target, this.domain);
+
+      // If we are in any attended-transfer state with a primary leg,
+      // treat this call as the consult leg instead of replacing the
+      // existing dialog.
+      if (this.attendedState !== "idle" && this.primarySession) {
+        // If a consult call is already active, do not start another one.
+        if (this.consultSession && this._sessionActive(this.consultSession)) {
+          frappe.show_alert({
+            message: __("Consult call already in progress"),
+            indicator: "orange",
+          });
+          return;
+        }
+        this._startConsultCall(target, uri);
+        return;
+      }
 
       this._teardownCurrentSession();
 
@@ -2089,7 +2336,7 @@ frappe.provide("telephony.sip");
         return;
       }
 
-      const targetHold = !this.isOnHold;
+      const targetHold = !this.session.__held;
 
       try {
         if (targetHold && typeof this.session.hold === "function") {
@@ -2108,12 +2355,14 @@ frappe.provide("telephony.sip");
                 s.track.enabled = !targetHold;
               });
           }
+          this.session.__held = targetHold;
           this.isOnHold = targetHold;
           this._updateControls();
           return;
         }
         // If SIP.js hold/unhold is supported, optimistically update local state;
         // session "hold"/"unhold" events (if fired) will keep things in sync.
+        this.session.__held = targetHold;
         this.isOnHold = targetHold;
         this._updateControls();
       } catch (err) {
@@ -2146,6 +2395,429 @@ frappe.provide("telephony.sip");
         message: targetState ? __("Muted") : __("Unmuted"),
         indicator: targetState ? "orange" : "green",
       });
+    }
+
+    _transfer() {
+      if (!this.session || !this._sessionActive(this.session)) {
+        frappe.show_alert({ message: __("No active call"), indicator: "orange" });
+        return;
+      }
+      const established =
+        !!this.session.__established || this.status === "in call";
+      if (!established) {
+        frappe.show_alert({
+          message: __("Transfer available only after call is connected"),
+          indicator: "orange",
+        });
+        return;
+      }
+
+      // First press: enter transfer mode.
+      if (!this.transferPending) {
+        // Put the remote party on hold while we collect the target.
+        if (!this.isOnHold) {
+          this.transferAutoHeld = true;
+          this._toggleHold();
+        } else {
+          this.transferAutoHeld = false;
+        }
+        this.transferPending = true;
+        if (this.dialInput) {
+          this.dialInput.value = "";
+          this._updateClearButtonVisibility();
+        }
+        this._ensureKeypadVisible();
+        this._updateStatus("on hold", __("Enter number to transfer to"));
+        this._updateControls();
+        return;
+      }
+
+      // Second press: perform the blind transfer using SIP REFER.
+      const targetRaw = (this.dialInput?.value || "").trim();
+      if (!targetRaw) {
+        frappe.show_alert({ message: __("Enter transfer target"), indicator: "orange" });
+        return;
+      }
+      const uri = sipTarget(targetRaw, this.domain);
+
+      try {
+        if (typeof this.session.refer === "function") {
+          const referral = this.session.refer(uri);
+          debugLog("refer", { target: targetRaw, uri });
+          if (referral && typeof referral.on === "function") {
+            referral.on("accepted", () => debugLog("transfer accepted"));
+            referral.on("rejected", (err) =>
+              debugLog("transfer rejected", err?.message || err)
+            );
+          }
+        } else {
+          debugLog("refer unsupported on session; skipping SIP REFER");
+          frappe.show_alert({
+            message: __("Transfer not supported by this session"),
+            indicator: "red",
+          });
+          return;
+        }
+        this._updateStatus("transferring");
+        this._logCall("Transferred");
+        this.transferPending = false;
+        // Blind transfer semantics: once REFER is sent, we release our leg.
+        this._teardownCurrentSession();
+      } catch (err) {
+        debugLog("transfer failed", err?.message || err);
+        this.transferPending = false;
+        // Try to resume the call if REFER fails.
+        if (this.isOnHold) {
+          this._toggleHold();
+        }
+        this._updateControls();
+        frappe.show_alert({
+          message: __("Transfer failed: {0}", [err?.message || ""]),
+          indicator: "red",
+        });
+      }
+    }
+
+    _swapAttendedLegs() {
+      if (!this.primarySession || !this.consultSession) {
+        return;
+      }
+
+      const primaryActive =
+        this._sessionActive(this.primarySession) && !!this.primarySession.__established;
+      const consultActive =
+        this._sessionActive(this.consultSession) && !!this.consultSession.__established;
+
+      if (!primaryActive || !consultActive) {
+        frappe.show_alert({
+          message: __("Cannot swap calls: one leg is no longer active"),
+          indicator: "orange",
+        });
+        return;
+      }
+
+      const current =
+        this.session === this.consultSession ? this.consultSession : this.primarySession;
+      const other =
+        current === this.primarySession ? this.consultSession : this.primarySession;
+
+      try {
+        if (typeof current.hold === "function") {
+          current.hold();
+          current.__held = true;
+        }
+      } catch (err) {
+        debugLog("swap: hold current leg failed", err?.message || err);
+      }
+      try {
+        if (typeof other.unhold === "function") {
+          other.unhold();
+          other.__held = false;
+        }
+      } catch (err) {
+        debugLog("swap: unhold other leg failed", err?.message || err);
+      }
+
+      this.session = other;
+      this.isOnHold = !!other.__held;
+
+      const remoteIdentity = this._remoteIdentity(other);
+      if (remoteIdentity) {
+        const label =
+          this._identityDisplay(remoteIdentity) ||
+          this._identityUser(remoteIdentity) ||
+          remoteIdentity?.uri?.toString?.() ||
+          "";
+        if (label) {
+          this._setRemoteInfo(label);
+          try {
+            this._attachRemoteAudio(other);
+            this._forceRemotePlayback("swap attach");
+          } catch (e) {
+            debugLog("swap: reattach remote audio failed", e?.message || e);
+          }
+        }
+      }
+
+      this._updateStatus("in call");
+      this._updateControls();
+    }
+
+    _toggleAttendedTransfer() {
+      if (!this.session || !this._sessionActive(this.session)) {
+        frappe.show_alert({ message: __("No active call"), indicator: "orange" });
+        return;
+      }
+      const established =
+        !!this.session.__established || this.status === "in call";
+      if (!established) {
+        frappe.show_alert({
+          message: __("Attended transfer available only after call is connected"),
+          indicator: "orange",
+        });
+        return;
+      }
+
+      // If we are already in the consulting stage, this press completes
+      // the attended transfer.
+      if (this.attendedState === "consulting") {
+        this._completeAttendedTransfer();
+        return;
+      }
+
+      // Pressing again while preparing cancels attended transfer.
+      if (this.attendedState === "preparing") {
+        this._cancelAttendedTransfer();
+        return;
+      }
+
+      // First press: enter attended-transfer preparation mode.
+      this.attendedState = "preparing";
+      // Remember whether the call was already on hold so that we can
+      // restore the previous state if the user cancels the transfer.
+      this.attendedWasHeld = !!this.isOnHold;
+      this.primarySession = this.session;
+      if (!this.isOnHold) {
+        this._toggleHold();
+      }
+      this.attendedTargetUri = null;
+      if (this.dialInput) {
+        this.dialInput.value = "";
+        this._updateClearButtonVisibility();
+      }
+      this._ensureKeypadVisible();
+      this._updateStatus("on hold", __("Enter number then press Call to consult"));
+      this._updateControls();
+    }
+
+    _startConsultCall(target, uri) {
+      if (!this.ua) {
+        frappe.show_alert({ message: __("SIP not ready"), indicator: "red" });
+        return;
+      }
+      const media = this._buildMediaOptions();
+      const options = this._sipSessionOptions();
+
+      this._setRemoteInfo(target);
+      this._togglePanel(true);
+      this._updateStatus("dialing", __("Consulting {0}", [target]));
+
+      try {
+        debugLog("attended consult dial", { target, uri });
+        const session = this.ua.invite(uri, {
+          ...options,
+          sessionDescriptionHandlerOptions: {
+            ...options.sessionDescriptionHandlerOptions,
+            render: media.render,
+          },
+        });
+        session.__direction = "outgoing";
+        session.__role = "consult";
+        this.consultSession = session;
+        this.attendedTargetUri = uri;
+        this.attendedState = "consulting";
+        this._handleSession(session);
+      } catch (err) {
+        this.attendedState = "idle";
+        this.consultSession = null;
+        this._updateStatus("failed", err?.message || "");
+        frappe.show_alert({
+          message: __("Consult call failed: {0}", [err?.message || ""]),
+          indicator: "red",
+        });
+      }
+    }
+
+    _completeAttendedTransfer() {
+      if (
+        this.attendedState !== "consulting" ||
+        !this.primarySession ||
+        !this.consultSession
+      ) {
+        return;
+      }
+
+      const primaryActive =
+        this._sessionActive(this.primarySession) && !!this.primarySession.__established;
+      const consultActive =
+        this._sessionActive(this.consultSession) && !!this.consultSession.__established;
+      if (!primaryActive || !consultActive) {
+        frappe.show_alert({
+          message: __("Attended transfer is available only when both calls are connected"),
+          indicator: "orange",
+        });
+        return;
+      }
+
+      try {
+        let referral = null;
+        if (typeof this.primarySession.refer === "function") {
+          // First try the session-as-target form so SIP.js can build a
+          // REFER with Replaces, which Asterisk understands for true
+          // attended transfer between the two existing dialogs.
+          try {
+            referral = this.primarySession.refer(this.consultSession);
+            debugLog("attended refer", { usingSessionTarget: true });
+          } catch (e) {
+            debugLog(
+              "attended refer using session target failed, will try URI fallback",
+              e?.message || e
+            );
+          }
+
+          // Fallback: build a plain URI target, similar to blind
+          // transfer, in case the session-as-target form is not
+          // supported by the upstream SBC/B2BUA.
+          if (!referral) {
+            let targetUri = null;
+            const remote = this._remoteIdentity(this.consultSession);
+            if (remote?.uri?.toString) {
+              targetUri = remote.uri.toString();
+            } else {
+              const user =
+                this._identityUser(remote) ||
+                this.dialInput?.value ||
+                this.attendedTargetUri;
+              if (user) {
+                targetUri = sipTarget(user, this.domain);
+              }
+            }
+
+            if (!targetUri) {
+              frappe.show_alert({
+                message: __("Unable to determine consult target for transfer"),
+                indicator: "red",
+              });
+              return;
+            }
+
+            referral = this.primarySession.refer(targetUri);
+            debugLog("attended refer", { usingSessionTarget: false, targetUri });
+          }
+
+          if (!referral) {
+            frappe.show_alert({
+              message: __("Attended transfer could not be initiated"),
+              indicator: "red",
+            });
+            return;
+          }
+
+          if (typeof referral.on === "function") {
+            referral.on("accepted", () => {
+              debugLog("attended transfer accepted");
+              // PBX should clear our legs; normal session-ended
+              // events will handle UI teardown.
+            });
+            referral.on("rejected", (err) => {
+              debugLog("attended transfer rejected", err?.message || err);
+              frappe.show_alert({
+                message: __("Attended transfer rejected: {0}", [
+                  err?.message || "",
+                ]),
+                indicator: "red",
+              });
+            });
+          }
+        } else {
+          frappe.show_alert({
+            message: __("Attended transfer not supported by this session"),
+            indicator: "red",
+          });
+          return;
+        }
+
+        this._updateStatus("transferring");
+        this._logCall("Transferred");
+
+        // Do NOT immediately hang up either leg here. Asterisk / the
+        // upstream SBC will typically send BYE to us once it has
+        // connected the remote parties. Our normal "ended" handler
+        // will then clear state and UI. We only reset the state flag
+        // so controls render correctly while the transfer completes.
+        this.attendedState = "idle";
+        this.transferPending = false;
+        this._updateControls();
+      } catch (err) {
+        debugLog("attended transfer failed", err?.message || err);
+        frappe.show_alert({
+          message: __("Attended transfer failed: {0}", [err?.message || ""]),
+          indicator: "red",
+        });
+      }
+    }
+
+    _cancelAttendedTransfer() {
+      if (this.attendedState === "idle") return;
+
+      const hadConsult =
+        this.consultSession && this._sessionActive(this.consultSession);
+      const primary = this.primarySession && this._sessionActive(this.primarySession)
+        ? this.primarySession
+        : null;
+      const primaryWasAutoHeld =
+        !!primary && !this.attendedWasHeld && !!primary.__held;
+
+      // If we had created a consult leg, hang it up.
+      if (this.consultSession && this._sessionActive(this.consultSession)) {
+        try {
+          if (typeof this.consultSession.bye === "function") {
+            this.consultSession.bye();
+          } else if (typeof this.consultSession.terminate === "function") {
+            this.consultSession.terminate();
+          }
+        } catch (e) {
+          // ignore errors while tearing down the consult leg
+        }
+      }
+
+      // Focus the original primary session again if it is still alive.
+      if (primary) {
+        this.session = primary;
+        // If we only placed the call on hold for attended transfer,
+        // resume it when cancelling.
+        if (primaryWasAutoHeld) {
+          try {
+            this._toggleHold();
+          } catch (e) {
+            debugLog("cancel attended: unhold failed", e?.message || e);
+          }
+        }
+        // Re‑attach remote media to the primary leg so audio resumes.
+        try {
+          this._attachRemoteAudio(primary);
+          this._forceRemotePlayback("resume primary after attended cancel");
+        } catch (e) {
+          debugLog("cancel attended: reattach remote audio failed", e?.message || e);
+        }
+      }
+
+      this.attendedState = "idle";
+      this.attendedTargetUri = null;
+      this.transferPending = false;
+      this.attendedWasHeld = false;
+
+      this._updateStatus("in call");
+      this._updateControls();
+    }
+
+    _cancelAnyTransfer() {
+      // Cancel blind transfer flow if in progress.
+      if (this.transferPending) {
+        if (this.transferAutoHeld && this.isOnHold) {
+          this._toggleHold();
+        }
+        this.transferPending = false;
+        this.transferAutoHeld = false;
+        this._updateStatus("in call");
+        this._updateControls();
+        return;
+      }
+
+      // Cancel attended transfer if we are in any of its stages.
+      if (this.attendedState === "preparing" || this.attendedState === "consulting") {
+        this._cancelAttendedTransfer();
+      }
     }
   }
 
