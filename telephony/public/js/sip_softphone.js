@@ -269,6 +269,12 @@ frappe.provide("telephony.sip");
 #telephony-sip-softphone.tp-softphone-muted .tp-softphone-mute-icon {
   background-image: url("/assets/telephony/softphone_media/mic_off.svg");
 }
+#telephony-sip-softphone .tp-softphone-hold-icon {
+  background-image: url("/assets/telephony/softphone_media/hold_off.svg");
+}
+#telephony-sip-softphone.tp-softphone-held .tp-softphone-hold-icon {
+  background-image: url("/assets/telephony/softphone_media/hold_on.svg");
+}
 #telephony-sip-softphone .tp-softphone-dialpad-icon {
   width: 44px;
   height: 44px;
@@ -563,6 +569,7 @@ frappe.provide("telephony.sip");
       this.domain = null;
       this.isRegistered = false;
       this.isMuted = false;
+      this.isOnHold = false;
       this.preferredMicId = null;
       this.iceCheckingTimeout = 1000;
       this.audioUnlocked = false;
@@ -872,6 +879,10 @@ frappe.provide("telephony.sip");
                   <span class="tp-softphone-btn-icon tp-softphone-mute-icon" aria-hidden="true"></span>
                   <span class="tp-softphone-btn-label">Mute</span>
                 </button>
+                <button type="button" class="tp-softphone-btn secondary tp-softphone-icon-only" data-action="hold" aria-label="Hold" title="Hold">
+                  <span class="tp-softphone-btn-icon tp-softphone-hold-icon" aria-hidden="true"></span>
+                  <span class="tp-softphone-btn-label">Hold</span>
+                </button>
                 <button type="button" class="tp-softphone-btn secondary tp-softphone-icon-only" data-action="toggle-keypad" aria-label="Show keypad" title="Show keypad">
                   <span class="tp-softphone-inline-icon tp-softphone-dialpad-icon" aria-hidden="true"></span>
                 </button>
@@ -907,6 +918,7 @@ frappe.provide("telephony.sip");
       this.answerBtn = this.root.querySelector('[data-action="answer"]');
       this.endBtn = this.root.querySelector('[data-action="end"]');
       this.muteBtn = this.root.querySelector('[data-action="mute"]');
+      this.holdBtn = this.root.querySelector('[data-action="hold"]');
       this.keypadToggleBtn = this.root.querySelector("[data-action='toggle-keypad']");
 
       if (this.toggleMain) {
@@ -943,6 +955,12 @@ frappe.provide("telephony.sip");
         this.muteBtn.onclick = () => {
           this._unlockAudio();
           this._toggleMute(this.muteBtn);
+        };
+      }
+      if (this.holdBtn) {
+        this.holdBtn.onclick = () => {
+          this._unlockAudio();
+          this._toggleHold();
         };
       }
       if (this.resumeBtn) {
@@ -1032,6 +1050,8 @@ frappe.provide("telephony.sip");
       const active = this._sessionActive(this.session);
       const direction = this._inferDirection(this.session);
       const status = this.status;
+      const established =
+        !!this.session?.__established || status === "in call";
 
       const isIncoming = direction === "incoming";
 
@@ -1044,6 +1064,7 @@ frappe.provide("telephony.sip");
       const showAnswer = isIncoming && (status === "incoming" || status === "ringing");
       const showEnd = active || status === "incoming" || status === "dialing" || status === "ringing";
       const showMute = active;
+      const showHold = established;
 
       const setVisibility = (el, visible) => {
         if (!el) return;
@@ -1055,6 +1076,7 @@ frappe.provide("telephony.sip");
       if (this.answerBtn) this.answerBtn.style.gridColumn = "";
       if (this.endBtn) this.endBtn.style.gridColumn = "";
       if (this.muteBtn) this.muteBtn.style.gridColumn = "";
+      if (this.holdBtn) this.holdBtn.style.gridColumn = "";
 
       if (this.callBtn) {
         this.callBtn.disabled = active;
@@ -1068,6 +1090,14 @@ frappe.provide("telephony.sip");
       if (this.muteBtn) {
         this.muteBtn.disabled = !active;
         setVisibility(this.muteBtn, showMute);
+      }
+      if (this.holdBtn) {
+        const canHold = established;
+        this.holdBtn.disabled = !canHold;
+        setVisibility(this.holdBtn, showHold);
+        const holdLabel = this.isOnHold ? __("Unhold") : __("Hold");
+        this.holdBtn.setAttribute("aria-label", holdLabel);
+        this.holdBtn.setAttribute("title", holdLabel);
       }
       if (this.answerBtn) {
         const canAnswer = isIncoming && (status === "incoming" || status === "ringing");
@@ -1083,6 +1113,7 @@ frappe.provide("telephony.sip");
 
       if (this.root) {
         this.root.classList.toggle("tp-softphone-muted", !!this.isMuted);
+        this.root.classList.toggle("tp-softphone-held", !!this.isOnHold);
       }
 
       // Adjust actions row column count to match number of visible buttons
@@ -1092,6 +1123,7 @@ frappe.provide("telephony.sip");
           this.answerBtn,
           this.endBtn,
           this.muteBtn,
+          this.holdBtn,
           this.keypadToggleBtn,
           this.resumeBtn,
         ];
@@ -1263,6 +1295,11 @@ frappe.provide("telephony.sip");
       }
 
       this.session = session;
+      // reset per-session flags
+      this.isOnHold = false;
+      // track whether this dialog has been answered so we can decide
+      // between CANCEL/reject vs BYE/terminate when hanging up.
+      session.__established = false;
       const callId = session?.request?.callId || session?.request?.call_id || randomId();
       this.currentCallId = callId;
       this.remoteMediaAttached = false;
@@ -1286,6 +1323,7 @@ frappe.provide("telephony.sip");
 
       session.on("accepted", (data) => {
         debugLog("session accepted", { id: callId, originator: data?.originator });
+        session.__established = true;
         this._updateStatus("in call");
         if (!this.currentCallStartTs) {
           this.currentCallStartTs = Date.now();
@@ -1302,6 +1340,7 @@ frappe.provide("telephony.sip");
 
       session.on("confirmed", () => {
         debugLog("session confirmed", { id: callId });
+        session.__established = true;
         this._updateStatus("in call");
         if (!this.currentCallStartTs) {
           this.currentCallStartTs = Date.now();
@@ -1313,6 +1352,20 @@ frappe.provide("telephony.sip");
         if (this.remoteAudio?.srcObject) {
           this._forceRemotePlayback("confirmed force-play");
         }
+      });
+
+      session.on("hold", () => {
+        debugLog("session hold", { id: callId });
+        this.isOnHold = true;
+        this._updateStatus("on hold");
+        this._updateControls();
+      });
+
+      session.on("unhold", () => {
+        debugLog("session unhold", { id: callId });
+        this.isOnHold = false;
+        this._updateStatus("in call");
+        this._updateControls();
       });
 
       session.on("failed", (data) => {
@@ -1364,6 +1417,7 @@ frappe.provide("telephony.sip");
         this._stopRingback();
         this._detachRemoteAudio();
         this._stopCallTimer();
+        this.isOnHold = false;
         this.session = null;
         this.currentCallId = null;
         this.currentCallStartTs = null;
@@ -1875,10 +1929,23 @@ frappe.provide("telephony.sip");
     _teardownCurrentSession() {
       if (this.session) {
         try {
-          if (typeof this.session.bye === "function" && this._sessionActive(this.session)) {
-            this.session.bye();
-          } else if (typeof this.session.terminate === "function" && this._sessionActive(this.session)) {
-            this.session.terminate();
+          const s = this.session;
+          const dir = this._inferDirection(s);
+          const established = !!s.__established || this.status === "in call";
+
+          // If the dialog is not yet established, use CANCEL/reject semantics.
+          if (!established) {
+            if (dir === "outgoing" && typeof s.cancel === "function") {
+              s.cancel();
+            } else if (dir === "incoming" && typeof s.reject === "function") {
+              s.reject();
+            } else if (typeof s.terminate === "function") {
+              s.terminate();
+            }
+          } else if (typeof s.bye === "function" && this._sessionActive(s)) {
+            s.bye();
+          } else if (typeof s.terminate === "function" && this._sessionActive(s)) {
+            s.terminate();
           }
         } catch (e) {
           // ignore
@@ -1886,8 +1953,11 @@ frappe.provide("telephony.sip");
       }
       this._stopCallTimer();
       this.currentCallStartTs = null;
+      this.isOnHold = false;
       this.session = null;
       this.remoteMediaAttached = false;
+      this._stopRingtone();
+      this._stopRingback();
       this._detachRemoteAudio();
       this._setRemoteInfo("Ready");
       this._updateControls();
@@ -2011,6 +2081,45 @@ frappe.provide("telephony.sip");
         this.session.connection ||
         null
       );
+    }
+
+    _toggleHold() {
+      if (!this.session || !this._sessionActive(this.session)) {
+        frappe.show_alert({ message: __("No active call"), indicator: "orange" });
+        return;
+      }
+
+      const targetHold = !this.isOnHold;
+
+      try {
+        if (targetHold && typeof this.session.hold === "function") {
+          this.session.hold();
+        } else if (!targetHold && typeof this.session.unhold === "function") {
+          this.session.unhold();
+        } else {
+          // Fallback: emulate hold by muting local audio tracks if SIP hold is
+          // not supported by this session implementation.
+          const pc = this._peerConnection();
+          if (pc?.getSenders) {
+            pc
+              .getSenders()
+              .filter((s) => s.track && s.track.kind === "audio")
+              .forEach((s) => {
+                s.track.enabled = !targetHold;
+              });
+          }
+          this.isOnHold = targetHold;
+          this._updateControls();
+          return;
+        }
+        // If SIP.js hold/unhold is supported, optimistically update local state;
+        // session "hold"/"unhold" events (if fired) will keep things in sync.
+        this.isOnHold = targetHold;
+        this._updateControls();
+      } catch (err) {
+        debugLog("toggle hold failed", err?.message || err);
+        return;
+      }
     }
 
     _toggleMute(buttonEl) {
