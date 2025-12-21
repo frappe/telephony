@@ -9,8 +9,13 @@
   "section_main",
   "enabled",
   "pbx_type",
+  "ice_transport_policy",
   "wss_uri",
   "realm",
+  "section_break_reliability",
+  "enable_incall_recovery",
+  "enable_full_preflight",
+  "preflight_test_target",
   "section_break_net",
   "stun_servers",
   "column_break_net",
@@ -36,7 +41,16 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "PBX Type",
-   "options": "Generic\nAsterisk (not wired yet)"
+   "options": "Generic\nAsterisk\nFreeSWITCH\nKamailio + RTPengine\nOpenSIPS + RTPengine"
+  },
+  {
+   "default": "",
+   "depends_on": "enabled",
+   "description": "Leave empty for default browser behavior (all candidates). Use relay only as a fallback for difficult NATs.",
+   "fieldname": "ice_transport_policy",
+   "fieldtype": "Select",
+   "label": "ICE Transport Policy",
+   "options": "\nall\nrelay"
   },
   {
    "depends_on": "enabled",
@@ -52,6 +66,34 @@
    "fieldname": "realm",
    "fieldtype": "Data",
    "label": "Realm / Domain"
+  },
+  {
+   "fieldname": "section_break_reliability",
+   "fieldtype": "Section Break",
+   "label": "Reliability"
+  },
+  {
+   "default": "1",
+   "depends_on": "enabled",
+   "description": "Best-effort recovery when ICE connects but DTLS/media stalls (no hard dependencies on PBX type).",
+   "fieldname": "enable_incall_recovery",
+   "fieldtype": "Check",
+   "label": "Enable In-Call Recovery"
+  },
+  {
+   "default": "0",
+   "depends_on": "enabled",
+   "description": "Optional short media test call to a configurable target (may require mic permission).",
+   "fieldname": "enable_full_preflight",
+   "fieldtype": "Check",
+   "label": "Enable Full Preflight Call"
+  },
+  {
+   "depends_on": "enable_full_preflight",
+   "description": "Extension or SIP URI to call during the full preflight test (e.g. 1000 or sip:echo@example.com).",
+   "fieldname": "preflight_test_target",
+   "fieldtype": "Data",
+   "label": "Preflight Test Target"
   },
   {
    "fieldname": "section_break_net",

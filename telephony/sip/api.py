@@ -1,4 +1,5 @@
 import frappe
+import json
 from frappe import _
 from frappe.utils import cint
 
@@ -27,6 +28,10 @@ def _get_global_sip_settings():
     return {
         "enabled": settings.enabled,
         "pbx_type": settings.pbx_type,
+        "ice_transport_policy": getattr(settings, "ice_transport_policy", "") or "",
+        "enable_incall_recovery": int(getattr(settings, "enable_incall_recovery", 1) or 0),
+        "enable_full_preflight": int(getattr(settings, "enable_full_preflight", 0) or 0),
+        "preflight_test_target": getattr(settings, "preflight_test_target", "") or "",
         "wss_uri": settings.wss_uri,
         "realm": settings.realm,
         "stun_servers": _multiline_to_list(settings.stun_servers),
@@ -95,6 +100,10 @@ def fetch_my_sip_config():
     cfg = {
         "enabled": True,
         "pbx_type": global_cfg.get("pbx_type"),
+        "ice_transport_policy": global_cfg.get("ice_transport_policy") or "",
+        "enable_incall_recovery": cint(global_cfg.get("enable_incall_recovery", 1)),
+        "enable_full_preflight": cint(global_cfg.get("enable_full_preflight", 0)),
+        "preflight_test_target": global_cfg.get("preflight_test_target") or "",
         "wss_uri": wss_uri,
         "realm": realm,
         "stun_servers": stun_servers,
@@ -108,6 +117,69 @@ def fetch_my_sip_config():
         cfg["password"] = agent_doc.get_password("sip_password")
 
     return cfg
+
+
+def _scrub_telemetry_payload(obj):
+    """Best-effort scrubber to avoid storing raw IP addresses accidentally."""
+    if isinstance(obj, dict):
+        cleaned = {}
+        for key, value in obj.items():
+            lk = str(key).lower()
+            if lk in ("ip", "address", "relatedaddress", "candidateip", "candidate_address"):
+                continue
+            cleaned[key] = _scrub_telemetry_payload(value)
+        return cleaned
+    if isinstance(obj, list):
+        return [_scrub_telemetry_payload(v) for v in obj]
+    return obj
+
+
+@frappe.whitelist()
+def log_sip_telemetry(
+    event_type: str,
+    call_id: str | None = None,
+    dialog_id: str | None = None,
+    severity: str = "info",
+    payload_json: str = "{}",
+):
+    user = frappe.session.user
+    if not user or user == "Guest":
+        frappe.throw(_("Not permitted"))
+
+    event_type = (event_type or "").strip()
+    if not event_type:
+        frappe.throw(_("event_type is required"))
+
+    severity = (severity or "info").strip().lower()
+    if severity not in ("info", "warning", "error"):
+        severity = "info"
+
+    payload_str = payload_json or "{}"
+    payload_obj = None
+    try:
+        payload_obj = json.loads(payload_str)
+    except Exception:
+        payload_obj = {"raw": str(payload_str)[:5000]}
+    payload_obj = _scrub_telemetry_payload(payload_obj)
+    payload_str = json.dumps(payload_obj, separators=(",", ":"), ensure_ascii=False)
+
+    if len(payload_str) > 20000:
+        payload_str = payload_str[:20000]
+
+    doc = frappe.get_doc(
+        {
+            "doctype": "TP SIP Telemetry Event",
+            "user": user,
+            "call_id": (call_id or "").strip(),
+            "dialog_id": (dialog_id or "").strip(),
+            "event_type": event_type,
+            "severity": severity,
+            "payload_json": payload_str,
+        }
+    )
+    doc.insert(ignore_permissions=True)
+    frappe.db.commit()  # nosemgrep
+    return {"ok": True, "name": doc.name}
 
 
 @frappe.whitelist()

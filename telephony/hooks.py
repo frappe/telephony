@@ -166,6 +166,15 @@ app_include_js = "/assets/telephony/js/sip_softphone.js"
 # 	],
 # }
 
+# Scheduled Tasks
+# ---------------
+
+scheduler_events = {
+    "daily": [
+        "telephony.sip.telemetry.cleanup_old_events",
+    ],
+}
+
 # Testing
 # -------
 

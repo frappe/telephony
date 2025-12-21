@@ -31,3 +31,6 @@ class TPSIPSettings(Document):
         _validate_uri(self.wss_uri, "wss:")
         _validate_stun_turn_list(self.stun_servers, "stun")
         _validate_stun_turn_list(self.turn_servers, "turn")
+
+        if self.ice_transport_policy and self.ice_transport_policy not in ("all", "relay"):
+            frappe.throw(_("ICE Transport Policy must be all or relay"))
