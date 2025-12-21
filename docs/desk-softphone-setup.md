@@ -10,6 +10,26 @@ The Telephony app includes an optional browser softphone built with SIP.js. When
   - Proper NAT / STUN / TURN configuration for media.
 - This app installed in your Frappe bench and site.
 
+#### TURN recommendations (high reliability)
+
+WebRTC media failures on “difficult” networks (mobile data, CGNAT, hotel/corporate Wi‑Fi) are often solved by having a TURN server that offers multiple transports.
+
+The Desk Softphone also runs a **lightweight preflight** automatically (no mic prompt) on startup and after network reconnects to confirm it can gather relay candidates when needed.
+
+In **TP SIP Settings → TURN Servers**, add entries **one per line** in the format:
+
+`turn|turns URL|username|password`
+
+Recommended minimum set (same host, multiple transports):
+
+- `turn:turn.example.com:3478?transport=udp|user|pass`
+- `turn:turn.example.com:3478?transport=tcp|user|pass`
+- `turns:turn.example.com:443?transport=tcp|user|pass`
+
+If you already use 5349 for TURN/TLS, you can also add:
+
+- `turns:turn.example.com:5349?transport=tcp|user|pass`
+
 #### PBX basics
 
 The exact dialplan and endpoint configuration depends on your PBX, but the softphone expects:
@@ -32,6 +52,9 @@ Refer to your PBX documentation for how to:
      - SIP domain / realm.
      - WebSocket URI (WSS).
      - Optional STUN/TURN servers.
+     - Optional reliability options:
+       - **Enable In‑Call Recovery** (recommended).
+       - **Enable Full Preflight Call** + **Preflight Test Target** (optional).
    - Save and enable the settings.
 
 2. **Configure TP Telephony Agent**
@@ -44,3 +67,5 @@ Refer to your PBX documentation for how to:
    - Click it to open the softphone panel, then:
      - Dial internal or external numbers as allowed by your PBX.
      - Answer incoming calls that are routed to the agent’s SIP extension.
+
+   - Optional: click the **gear icon** to open **Diagnostics** (build signature, current ICE policy, latest preflight summary, last DTLS/media stall). If **Enable Full Preflight Call** is enabled and a **Preflight Test Target** is configured, run **Full Media Test** from this Diagnostics popup to confirm inbound audio packets are flowing.

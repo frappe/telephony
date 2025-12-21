@@ -1,4 +1,7 @@
 {
+  "scripts": {
+    "build": "node build/softphone.js"
+  },
   "dependencies": {
     "esbuild": "0.19.12"
   }
