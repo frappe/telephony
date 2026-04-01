@@ -24,6 +24,10 @@ bench install-app telephony
 
 This stores configuration settings for integrating with Twilio provider, including API credentials such as Account SID and Auth Token, Secret, options to enable the integration and record calls.
 
+##### TP SIP Settings
+
+This stores SIP/WebRTC settings used by the Desk softphone, including SIP domain/realm, WebSocket (WSS) URI, optional STUN/TURN servers, and flags to enable the softphone integration.
+
 ##### TP Exotel Settings
 
 This holds settings for Exotel provider, such as Account SID, Subdomain, Webhook Verify Token, API Key, API Token, and flags to enable the service and record outgoing calls.
@@ -34,7 +38,10 @@ This records details of all telephony calls made through the app, including call
 
 ##### TP Telephony Agent
 
-This defines agents who can make and receive calls, this handles settings like linking to user accounts, mobile numbers, default medium, and specific numbers/devices for each provider.
+This defines agents who can make and receive calls. It links Frappe Users to their telephony identities, including:
+
+- Twilio / Exotel numbers or devices.
+- SIP/WebRTC credentials used by the Desk softphone (SIP username/extension, password, and domain).
 
 #### Webhooks and APIs
 
@@ -49,6 +56,11 @@ https://docs.frappe.io/helpdesk/twilio
 ### Exotel Setup
 
 https://docs.frappe.io/helpdesk/exotel
+
+---
+### Desk Softphone (WebRTC SIP)
+
+See [`docs/desk-softphone-setup.md`](docs/desk-softphone-setup.md) for a complete guide to configuring the Desk softphone (PBX prerequisites, TP SIP Settings, TP Telephony Agent, and usage).
 
 ---
 

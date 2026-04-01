@@ -1,0 +1,173 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-11-22 15:15:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "section_main",
+  "enabled",
+  "pbx_type",
+  "ice_transport_policy",
+  "wss_uri",
+  "realm",
+  "section_break_reliability",
+  "enable_incall_recovery",
+  "enable_full_preflight",
+  "preflight_test_target",
+  "section_break_net",
+  "stun_servers",
+  "column_break_net",
+  "turn_servers",
+  "section_break_sec",
+  "webhook_secret"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_main",
+   "fieldtype": "Section Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Enabled"
+  },
+  {
+   "default": "Generic",
+   "fieldname": "pbx_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "PBX Type",
+   "options": "Generic\nAsterisk\nFreeSWITCH\nKamailio + RTPengine\nOpenSIPS + RTPengine"
+  },
+  {
+   "default": "",
+   "depends_on": "enabled",
+   "description": "Leave empty for default browser behavior (all candidates). Use relay only as a fallback for difficult NATs.",
+   "fieldname": "ice_transport_policy",
+   "fieldtype": "Select",
+   "label": "ICE Transport Policy",
+   "options": "\nall\nrelay"
+  },
+  {
+   "depends_on": "enabled",
+   "description": "WSS endpoint for WebRTC SIP, e.g. wss://pbx.example.com:8089/ws",
+   "fieldname": "wss_uri",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "WSS URI",
+   "mandatory_depends_on": "eval:doc.enabled"
+  },
+  {
+   "depends_on": "enabled",
+   "fieldname": "realm",
+   "fieldtype": "Data",
+   "label": "Realm / Domain"
+  },
+  {
+   "fieldname": "section_break_reliability",
+   "fieldtype": "Section Break",
+   "label": "Reliability"
+  },
+  {
+   "default": "1",
+   "depends_on": "enabled",
+   "description": "Best-effort recovery when ICE connects but DTLS/media stalls (no hard dependencies on PBX type).",
+   "fieldname": "enable_incall_recovery",
+   "fieldtype": "Check",
+   "label": "Enable In-Call Recovery"
+  },
+  {
+   "default": "0",
+   "depends_on": "enabled",
+   "description": "Optional short media test call to a configurable target (may require mic permission).",
+   "fieldname": "enable_full_preflight",
+   "fieldtype": "Check",
+   "label": "Enable Full Preflight Call"
+  },
+  {
+   "depends_on": "enable_full_preflight",
+   "description": "Extension or SIP URI to call during the full preflight test (e.g. 1000 or sip:echo@example.com).",
+   "fieldname": "preflight_test_target",
+   "fieldtype": "Data",
+   "label": "Preflight Test Target"
+  },
+  {
+   "fieldname": "section_break_net",
+   "fieldtype": "Section Break",
+   "label": "Network"
+  },
+  {
+   "depends_on": "enabled",
+   "description": "One per line, e.g. stun:stun.l.google.com:19302",
+   "fieldname": "stun_servers",
+   "fieldtype": "Small Text",
+   "label": "STUN Servers"
+  },
+  {
+   "fieldname": "column_break_net",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "enabled",
+   "description": "One per line, e.g. turn:turn.example.com:5349?transport=tcp|user|pass",
+   "fieldname": "turn_servers",
+   "fieldtype": "Small Text",
+   "label": "TURN Servers"
+  },
+  {
+   "fieldname": "section_break_sec",
+   "fieldtype": "Section Break",
+   "label": "Security"
+  },
+  {
+   "depends_on": "enabled",
+   "fieldname": "webhook_secret",
+   "fieldtype": "Password",
+   "label": "Webhook Secret"
+  }
+ ],
+ "hide_toolbar": 0,
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2025-11-22 15:15:00.000000",
+ "modified_by": "Administrator",
+ "module": "FTelephony",
+ "name": "TP SIP Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "TP Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "All",
+   "share": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

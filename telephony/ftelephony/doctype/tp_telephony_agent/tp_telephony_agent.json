@@ -11,6 +11,19 @@
   "column_break_lekf",
   "mobile_no",
   "default_medium",
+  "section_break_sip",
+  "sip_enabled",
+  "sip_server",
+  "sip_realm",
+  "sip_username",
+  "column_break_sip_creds",
+  "sip_password",
+  "sip_display_name",
+  "sip_extension",
+  "section_break_stun",
+  "use_global_stun_turn",
+  "sip_stun_servers",
+  "sip_turn_servers",
   "section_break_riia",
   "twilio",
   "twilio_number",
@@ -50,10 +63,87 @@
    "label": "Mobile No."
   },
   {
-   "fieldname": "default_medium",
-   "fieldtype": "Select",
-   "label": "Default Medium",
-   "options": "\nTwilio\nExotel"
+  "fieldname": "default_medium",
+  "fieldtype": "Select",
+  "label": "Default Medium",
+   "options": "\nTwilio\nExotel\nSIP"
+  },
+  {
+   "fieldname": "section_break_sip",
+   "fieldtype": "Section Break",
+   "label": "SIP"
+  },
+  {
+   "default": "0",
+   "fieldname": "sip_enabled",
+   "fieldtype": "Check",
+   "label": "SIP"
+  },
+  {
+   "depends_on": "sip_enabled",
+   "description": "Override global WSS if needed, e.g. wss://pbx.example.com:8089/ws",
+   "fieldname": "sip_server",
+   "fieldtype": "Data",
+   "label": "SIP Server (WSS URI)"
+  },
+  {
+   "depends_on": "sip_enabled",
+   "fieldname": "sip_realm",
+   "fieldtype": "Data",
+   "label": "Realm / Domain"
+  },
+  {
+   "depends_on": "sip_enabled",
+   "fieldname": "sip_username",
+   "fieldtype": "Data",
+   "label": "SIP Username"
+  },
+  {
+   "fieldname": "column_break_sip_creds",
+   "fieldtype": "Column Break"
+  },
+  {
+   "depends_on": "sip_enabled",
+   "fieldname": "sip_password",
+   "fieldtype": "Password",
+   "label": "SIP Password"
+  },
+  {
+   "depends_on": "sip_enabled",
+   "fieldname": "sip_display_name",
+   "fieldtype": "Data",
+   "label": "Display Name"
+  },
+  {
+   "depends_on": "sip_enabled",
+   "fieldname": "sip_extension",
+   "fieldtype": "Data",
+   "label": "Extension"
+  },
+  {
+   "fieldname": "section_break_stun",
+   "fieldtype": "Section Break",
+   "label": "STUN / TURN"
+  },
+  {
+   "default": "1",
+   "fieldname": "use_global_stun_turn",
+   "fieldtype": "Check",
+   "label": "Use Global STUN/TURN"
+  },
+  {
+   "depends_on": "eval:doc.sip_enabled && !doc.use_global_stun_turn",
+   "description": "One per line, e.g. stun:stun.l.google.com:19302",
+   "fieldname": "sip_stun_servers",
+   "fieldtype": "Small Text",
+   "label": "STUN Servers"
+  },
+  {
+   "depends_on": "eval:doc.sip_enabled && !doc.use_global_stun_turn",
+   "description": "One per line, e.g. turn:turn.example.com:5349?transport=tcp|user|pass",
+   "fieldname": "sip_turn_servers",
+   "fieldtype": "Small Text",
+   "label": "TURN Servers"
   },
   {
    "fieldname": "section_break_riia",

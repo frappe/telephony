@@ -8,10 +8,12 @@
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
- "field_order": [
+  "field_order": [
   "telephony_medium",
   "section_break_gyqe",
   "id",
+  "sip_call_id",
+  "sip_dialog_id",
   "from",
   "status",
   "duration",
@@ -29,12 +31,12 @@
  ],
  "fields": [
   {
-   "fieldname": "telephony_medium",
-   "fieldtype": "Select",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
-   "label": "Telephony Medium",
-   "options": "\nManual\nTwilio\nExotel",
+  "fieldname": "telephony_medium",
+  "fieldtype": "Select",
+  "in_list_view": 1,
+  "in_standard_filter": 1,
+  "label": "Telephony Medium",
+   "options": "\nManual\nTwilio\nExotel\nSIP",
    "read_only": 1
   },
   {
@@ -46,6 +48,18 @@
    "fieldtype": "Data",
    "label": "ID",
    "unique": 1
+  },
+  {
+   "fieldname": "sip_call_id",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "SIP Call ID"
+  },
+  {
+   "fieldname": "sip_dialog_id",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "SIP Dialog ID"
   },
   {
    "fieldname": "from",
