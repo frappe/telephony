@@ -11,10 +11,12 @@ from telephony.utils import (
 def is_call_integration_enabled():
     twilio_enabled = frappe.db.get_single_value("TP Twilio Settings", "enabled")
     exotel_enabled = frappe.db.get_single_value("TP Exotel Settings", "enabled")
+    zadarma_status = _get_zadarma_status()
 
     return {
         "twilio_enabled": twilio_enabled,
         "exotel_enabled": exotel_enabled,
+        **zadarma_status,
         "default_calling_medium": get_user_default_calling_medium(),
     }
 
@@ -133,3 +135,44 @@ def create_telephony_agent():
         agent = frappe.db.get_value("TP Telephony Agent", {"user": frappe.session.user})
 
     return agent
+
+
+def _get_zadarma_status():
+    status = {
+        "zadarma_enabled": False,
+        "zadarma_configured": False,
+        "zadarma_settings_enabled": False,
+        "zadarma_use_webrtc_widget": False,
+    }
+
+    if not frappe.db.exists("DocType", "Zadarma Settings"):
+        return status
+
+    status["zadarma_settings_enabled"] = bool(
+        frappe.db.get_single_value("Zadarma Settings", "enabled")
+    )
+    status["zadarma_use_webrtc_widget"] = bool(
+        frappe.db.get_single_value("Zadarma Settings", "use_webrtc_widget")
+    )
+
+    if not frappe.db.exists("TP Telephony Agent", frappe.session.user):
+        return status
+
+    meta = frappe.get_meta("TP Telephony Agent")
+    fieldnames = {field.fieldname for field in meta.fields}
+    if not {"zadarma_enabled", "zadarma_extension"}.issubset(fieldnames):
+        return status
+
+    agent = frappe.db.get_value(
+        "TP Telephony Agent",
+        frappe.session.user,
+        ["zadarma_enabled", "zadarma_extension"],
+        as_dict=True,
+    )
+    status["zadarma_configured"] = bool(
+        agent and agent.zadarma_enabled and agent.zadarma_extension
+    )
+    status["zadarma_enabled"] = bool(
+        status["zadarma_settings_enabled"] and status["zadarma_configured"]
+    )
+    return status
