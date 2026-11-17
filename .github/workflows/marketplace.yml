@@ -1,0 +1,26 @@
+name: Publish to the marketplace
+
+# Every push to develop opens or updates its release PR in frappe/marketplace, so
+# benches get the new commit once the marketplace check passes. develop is the only
+# branch and Helpdesk installs it, so it is the stable channel.
+
+on:
+  push:
+    branches: [develop]
+  workflow_dispatch:
+
+# Release PRs edit the same marketplace entry, so run one at a time.
+concurrency:
+  group: marketplace-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  marketplace:
+    name: Open the marketplace release PR
+    uses: frappe/marketplace/.github/workflows/publish-release.yml@main
+    with:
+      app: telephony
+      branch: develop
+      channel: stable
+    secrets:
+      registry_token: ${{ secrets.MARKETPLACE_PR_TOKEN }}
