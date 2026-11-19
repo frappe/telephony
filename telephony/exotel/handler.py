@@ -243,7 +243,8 @@ def get_call_log(call_payload):
 
 
 def get_agent(call_payload):
-    if agent_email := call_payload.get("AgentEmail"):
+    agent_email = call_payload.get("AgentEmail")
+    if agent_email and isinstance(agent_email, str):
         return frappe.db.get_value("User", {"email": agent_email})
 
 
