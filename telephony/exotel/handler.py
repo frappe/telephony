@@ -53,7 +53,7 @@ def handle_request(**kwargs):
                 to_number=call_payload.get("DialWhomNumber"),
                 medium=call_payload.get("To"),
                 status=get_call_log_status(call_payload),
-                agent=call_payload.get("AgentEmail"),
+                agent=get_agent(call_payload),
             )
     except Exception:
         request_log.status = "Failed"
@@ -242,6 +242,11 @@ def get_call_log(call_payload):
         return frappe.get_doc("TP Call Log", call_log_id)
 
 
+def get_agent(call_payload):
+    if agent_email := call_payload.get("AgentEmail"):
+        return frappe.db.get_value("User", {"email": agent_email})
+
+
 def get_call_log_status(call_payload, direction="inbound"):
     if direction == "outbound-api" or direction == "outbound-dial":
         status = call_payload.get("Status")
@@ -294,8 +299,8 @@ def update_call_log(call_payload, status="Ringing", call_log=None):
             call_log.start_time = call_payload.get("StartTime")
             call_log.end_time = call_payload.get("EndTime")
 
-            if direction == "incoming" and call_payload.get("AgentEmail"):
-                call_log.receiver = call_payload.get("AgentEmail")
+            if direction == "incoming" and (agent := get_agent(call_payload)):
+                call_log.receiver = agent
 
             call_log.save(ignore_permissions=True)
             frappe.db.commit()  # nosemgrep
